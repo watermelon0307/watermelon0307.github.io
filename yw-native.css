@@ -1,0 +1,5 @@
+/* 僅原生 App 套用；瀏覽器與既有版面保持原樣。 */
+.yw-native-app .ywm-head{height:calc(56px + env(safe-area-inset-top,0px));flex-basis:calc(56px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px)}
+.yw-native-app .ywm-mini{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+.yw-native-app .ywc-overlay{padding-top:env(safe-area-inset-top,0px)}
+@media (max-width:600px){.yw-native-app .ywc-overlay{padding-top:env(safe-area-inset-top,0px)}}

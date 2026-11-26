@@ -1,0 +1,44 @@
+/* 餘溫角色音樂陪伴：沿用一起聽面板的深色視覺與安全區。 */
+.ywc-bar{margin:18px auto 0;max-width:600px;padding:14px;border:1px solid #ffffff17;border-radius:14px;background:#ffffff07;text-align:left}
+.ywc-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.ywc-bar button{min-height:44px;border:1px solid #ffffff24;border-radius:10px;background:#ffffff0b;color:#f4f4f4;padding:8px 10px;font-size:12px;cursor:pointer;transition:background-color .18s ease-out,border-color .18s ease-out,transform .18s ease-out}
+.ywc-bar button:hover{background:#ffffff16;border-color:#ffffff42}
+.ywc-bar button:active{transform:scale(.97)}
+.ywc-bar button:disabled{opacity:.45;cursor:wait}
+.ywc-bar button:focus-visible,.ywc-history button:focus-visible{outline:2px solid #ff8585;outline-offset:2px}
+.ywc-preferences{display:flex;gap:20px;flex-wrap:wrap;margin-top:12px}
+.ywc-preferences label{min-height:44px;display:flex;align-items:center;gap:8px;color:#d0d0d0;font-size:13px;cursor:pointer}
+.ywc-preferences input{width:18px;height:18px;margin:0;accent-color:#ec4141}
+.ywc-preferences input:focus-visible{outline:2px solid #ff8585;outline-offset:3px}
+.ywc-status{margin:4px 0 0;color:#a9a9a9;font-size:12px;line-height:1.65}
+
+.ywc-overlay{position:fixed;inset:0;z-index:10090;display:flex;align-items:center;justify-content:center;padding:24px;color:#f4f4f4;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Microsoft JhengHei",sans-serif}
+.ywc-overlay *{box-sizing:border-box}
+.ywc-backdrop{position:absolute;inset:0;background:#090909d9;backdrop-filter:blur(8px)}
+.ywc-history{position:relative;width:min(680px,100%);max-height:82dvh;display:flex;flex-direction:column;border:1px solid #ffffff20;border-radius:18px;background:#1d1d1d;box-shadow:0 24px 70px #0009;overflow:hidden}
+.ywc-history>header{display:flex;align-items:flex-start;gap:16px;padding:20px 20px 12px}
+.ywc-history>header>div{flex:1;min-width:0}
+.ywc-history h2{margin:0;font-size:20px;line-height:1.4}
+.ywc-history header p{margin:5px 0 0;color:#aaa;font-size:12px;line-height:1.6}
+.ywc-close{flex:0 0 44px;width:44px;height:44px;margin:-8px -8px 0 0;border:0;border-radius:50%;background:transparent;color:#ddd;font-size:28px;cursor:pointer}
+.ywc-history-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 20px 12px;color:#aaa;font-size:12px;border-bottom:1px solid #ffffff12}
+.ywc-history-tools button{min-height:44px;border:0;background:transparent;color:#ffaaaa;font-size:12px;cursor:pointer}
+.ywc-history-tools button:disabled{color:#666;cursor:default}
+.ywc-history-list{padding:4px 20px 20px;overflow-y:auto;overscroll-behavior:contain}
+.ywc-history-item{display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid #ffffff10}
+.ywc-history-copy{flex:1;min-width:0}
+.ywc-history-item h3{margin:0 0 5px;font-size:15px;line-height:1.5;overflow-wrap:anywhere}
+.ywc-history-item p{margin:3px 0;color:#aaa;font-size:12px;line-height:1.55}
+.ywc-rec-badge{display:inline-block;margin-top:7px;padding:3px 8px;border:1px solid #ec414166;border-radius:999px;color:#ffaaaa;font-size:11px}
+.ywc-replay{flex:0 0 auto;min-width:58px;min-height:44px;border:1px solid #ffffff28;border-radius:999px;background:#ffffff0c;color:#fff;cursor:pointer}
+.ywc-history-empty{padding:42px 12px;color:#aaa;text-align:center;font-size:13px;line-height:1.8}
+
+@media (max-width:600px){
+  .ywc-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ywc-overlay{align-items:flex-end;padding:0}
+  .ywc-history{width:100%;max-height:86dvh;border-radius:18px 18px 0 0;padding-bottom:env(safe-area-inset-bottom,0px)}
+  .ywc-history>header{padding:18px 16px 10px}
+  .ywc-history-tools{padding:6px 16px 10px}
+  .ywc-history-list{padding:4px 16px 18px}
+}
+@media (prefers-reduced-motion:reduce){.ywc-bar button{transition:none}}

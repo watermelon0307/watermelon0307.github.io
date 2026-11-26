@@ -1,0 +1,316 @@
+/* 新霓市 Galgame 偶遇舞台 */
+
+.nrgal-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 9000; /* 低於專注小遊戲(9999)與漂浮播放器(10065) */
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(3, 5, 14, 0.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  transition: opacity 0.32s ease;
+}
+
+.nrgal-stage.on { opacity: 1; }
+.nrgal-stage[hidden] { display: none; }
+
+/* 背景：地點浮水印 + 霓虹漸層 */
+.nrgal-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 85% 0%, rgba(255, 43, 214, 0.16), transparent 55%),
+    radial-gradient(110% 80% at 10% 100%, rgba(25, 240, 255, 0.14), transparent 55%),
+    linear-gradient(180deg, #05081a 0%, #0a0620 100%);
+}
+
+.nrgal-bg span {
+  position: absolute;
+  right: -0.1em;
+  bottom: 0.16em;
+  font-size: clamp(90px, 22vw, 260px);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(125, 243, 255, 0.14);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.nrgal-layout {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(12px, 3vw, 40px);
+  width: min(980px, 100%);
+  padding: clamp(14px, 3vh, 40px) clamp(14px, 4vw, 48px);
+}
+
+/* ---------- 立繪 ---------- */
+
+.nrgal-figure {
+  position: relative;
+  flex: none;
+  width: clamp(180px, 30vw, 320px);
+  height: clamp(260px, 52vh, 470px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  transform: translateY(14px);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.25, 1.1), opacity 0.4s ease;
+}
+
+.nrgal-stage.on .nrgal-figure { transform: translateY(0); opacity: 1; }
+
+.nrgal-portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 26px rgba(25, 240, 255, 0.35));
+}
+
+/* 霓虹訊號合成立牌（一般居民，非手繪立繪） */
+.nrgal-synth {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  background:
+    repeating-linear-gradient(0deg, rgba(25, 240, 255, 0.05) 0 2px, transparent 2px 7px),
+    radial-gradient(90% 70% at 50% 62%, rgba(25, 240, 255, 0.1), transparent 70%);
+  border-radius: 14px;
+}
+
+.nrgal-figure.is-synth .nrgal-synth { display: flex; }
+
+.nrgal-synth-head {
+  position: absolute;
+  bottom: 46%;
+  width: 34%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(125, 243, 255, 0.75), rgba(22, 32, 68, 0.95) 58%);
+  border: 2px solid #7df3ff;
+  box-shadow: 0 0 34px rgba(25, 240, 255, 0.7), inset 0 0 24px rgba(255, 43, 214, 0.45);
+}
+
+.nrgal-synth-body {
+  position: absolute;
+  bottom: 4%;
+  width: 78%;
+  height: 48%;
+  border-radius: 48% 48% 12px 12px / 62% 62% 12px 12px;
+  background: linear-gradient(165deg, rgba(255, 43, 214, 0.6), rgba(18, 26, 58, 0.96) 60%);
+  border: 2px solid rgba(255, 43, 214, 0.9);
+  box-shadow: 0 0 40px rgba(255, 43, 214, 0.5), inset 0 0 26px rgba(25, 240, 255, 0.2);
+}
+
+.nrgal-synth-glyph {
+  position: absolute;
+  bottom: 20%;
+  font-size: clamp(56px, 9vw, 104px);
+  font-weight: 900;
+  color: #eafcff;
+  text-shadow: 0 0 18px rgba(25, 240, 255, 0.9), 0 0 44px rgba(255, 43, 214, 0.6);
+}
+
+.nrgal-figure-tag {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: #7df3ffaa;
+  background: #0a0e24cc;
+  border: 1px solid #19f0ff33;
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+/* ---------- 對話面板 ---------- */
+
+.nrgal-panel {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid rgba(25, 240, 255, 0.28);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(9, 13, 32, 0.97), rgba(7, 9, 24, 0.99));
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  padding: clamp(16px, 2.6vh, 26px) clamp(16px, 3vw, 28px);
+  transform: translateY(26px);
+  opacity: 0;
+  transition: transform 0.42s cubic-bezier(0.2, 0.9, 0.25, 1), opacity 0.42s ease 0.06s;
+}
+
+.nrgal-stage.on .nrgal-panel { transform: translateY(0); opacity: 1; }
+
+.nrgal-nameplate {
+  position: absolute;
+  top: -17px;
+  left: 20px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 43, 214, 0.5);
+  background: linear-gradient(120deg, rgba(255, 43, 214, 0.2), rgba(10, 14, 36, 0.96));
+  box-shadow: 0 0 18px rgba(255, 43, 214, 0.25);
+}
+
+.nrgal-nameplate b {
+  font-size: clamp(16px, 2vw, 20px);
+  color: #ffe6f7;
+  letter-spacing: 0.06em;
+}
+
+.nrgal-nameplate span {
+  font-size: 11.5px;
+  color: #9db8e8;
+  letter-spacing: 0.08em;
+}
+
+.nrgal-text {
+  min-height: 3.6em;
+  margin: 12px 0 14px;
+  font-size: clamp(14.5px, 1.8vw, 17px);
+  line-height: 1.85;
+  color: #eaf6ff;
+  letter-spacing: 0.02em;
+  outline: none;
+  cursor: pointer;
+}
+
+.nrgal-opts {
+  display: grid;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.nrgal-opts.ready { opacity: 1; transform: none; pointer-events: auto; }
+.nrgal-opts.sending { opacity: 0.55; pointer-events: none; }
+
+.nrgal-opts button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(125, 243, 255, 0.3);
+  background: rgba(12, 20, 44, 0.7);
+  color: #dff4ff;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.nrgal-opts button i {
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #7df3ff;
+  border: 1px solid rgba(125, 243, 255, 0.45);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+.nrgal-opts button:hover,
+.nrgal-opts button:focus-visible {
+  border-color: #19f0ff;
+  background: rgba(25, 240, 255, 0.12);
+  transform: translateX(4px);
+  outline: none;
+}
+
+.nrgal-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.nrgal-tools button {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #ffffff22;
+  background: transparent;
+  color: #9db8e8;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.nrgal-tools button:hover { color: #eafcff; border-color: #19f0ff88; }
+
+/* 演出模式重開 chip：浮在右下（避開控制台） */
+.nrgal-chip {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 8990;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 43, 214, 0.55);
+  background: linear-gradient(120deg, rgba(255, 43, 214, 0.22), rgba(10, 14, 36, 0.94));
+  color: #ffd7f2;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(255, 43, 214, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.nrgal-chip[hidden] { display: none; }
+.nrgal-chip:hover { border-color: #ff2bd6; color: #fff; }
+
+/* 作答成功的一瞬提示態 */
+.nrgal-stage.answered .nrgal-panel { border-color: rgba(125, 255, 178, 0.5); }
+
+/* ---------- 手機版 ---------- */
+
+@media (max-width: 720px) {
+  .nrgal-layout {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .nrgal-figure {
+    flex: none;
+    width: clamp(140px, 44vw, 210px);
+    height: clamp(170px, 30vh, 250px);
+    margin: 0 auto -18px;
+    z-index: 1;
+  }
+
+  .nrgal-panel { border-radius: 16px; }
+  .nrgal-nameplate { top: -15px; left: 14px; }
+  .nrgal-bg span { font-size: clamp(70px, 26vw, 140px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nrgal-stage,
+  .nrgal-figure,
+  .nrgal-panel,
+  .nrgal-opts,
+  .nrgal-opts button { transition: none; }
+}

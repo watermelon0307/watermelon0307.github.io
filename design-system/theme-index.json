@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "registryVersion": "1.0.0",
+  "supportedApps": ["chat", "desktop", "social", "story", "world", "music", "settings", "studio"],
+  "themes": [
+    {"id":"warmth-original","version":"1.0.0","name":"WARMTH Original","tags":["paper","warm","light"],"background":"#F4F0EA","surface":"#FFFCF8","accent":"#AE8275","text":"#453C39","material":"paper","defaultMode":"light","fallbackThemeId":null},
+    {"id":"mint-diary","version":"1.0.0","name":"Mint Diary","tags":["mint","diary","light"],"background":"#E4F0E8","surface":"#FAFFFC","accent":"#609C86","text":"#304D42","material":"journal","defaultMode":"light","fallbackThemeId":"warmth-original"},
+    {"id":"strawberry-letter","version":"1.0.0","name":"Strawberry Letter","tags":["pink","letter","light"],"background":"#F9E6EF","surface":"#FFF9FC","accent":"#C97F9F","text":"#674254","material":"cream","defaultMode":"light","fallbackThemeId":"warmth-original"},
+    {"id":"midnight-dream","version":"1.0.0","name":"Midnight Dream","tags":["night","glass","dark"],"background":"#1D2030","surface":"#2C3144","accent":"#9C90DA","text":"#EFECFA","material":"glass","defaultMode":"dark","fallbackThemeId":"warmth-original"},
+    {"id":"black-ribbon","version":"1.0.0","name":"Black Ribbon","tags":["ribbon","pink","dark"],"background":"#231F29","surface":"#37303C","accent":"#D58DAF","text":"#F4E7F0","material":"ribbon","defaultMode":"dark","fallbackThemeId":"midnight-dream"},
+    {"id":"liquid-aurora","version":"1.0.0","name":"Liquid Aurora","tags":["aurora","glass","light"],"background":"#DCE3F4","surface":"#F1EDF8","accent":"#938CCA","text":"#42425F","material":"glass","defaultMode":"light","fallbackThemeId":"warmth-original"},
+    {"id":"neon-system","version":"1.0.0","name":"NEON System","tags":["neon","cyber","dark"],"background":"#111525","surface":"#212B40","accent":"#8178F5","text":"#EBEFFF","material":"neon","defaultMode":"dark","fallbackThemeId":"midnight-dream"},
+    {"id":"aether-grimoire","version":"1.0.0","name":"Aether Grimoire","tags":["fantasy","paper","light"],"background":"#E8DFC9","surface":"#FCF5E4","accent":"#A1834C","text":"#58462D","material":"grimoire","defaultMode":"light","fallbackThemeId":"warmth-original"}
+  ]
+}

@@ -1,0 +1,137 @@
+/* 新霓市 2.5D 等距地圖 */
+
+/* 視圖開關：嵌在既有 .city-tools 列，沿用 seg 按鈕語言 */
+.nrpg-iso-toggle {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid #ffffff24;
+  background: #0a0e24b8;
+  color: #cfe6ff;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.nrpg-iso-toggle:hover { border-color: #19f0ff88; color: #eafcff; }
+
+.nrpg-iso-toggle.on {
+  color: #04121c;
+  background: linear-gradient(120deg, #19f0ff, #ff2bd6);
+  border-color: transparent;
+  box-shadow: 0 0 14px #19f0ff66;
+}
+
+/* 啟用時隱藏 React 地圖層，保留工具列與本容器 */
+.city-map-wrap.iso25d-on > :not(.city-tools):not(.nrpg-iso) { display: none !important; }
+
+.nrpg-iso {
+  position: relative;
+  height: clamp(380px, 58vh, 620px);
+  background: #05081a;
+}
+
+.nrpg-iso[hidden] { display: none; }
+
+.nrpg-iso-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: manipulation;
+}
+
+.nrpg-iso-toolbar {
+  position: absolute;
+  top: 54px; /* 避開 .city-tools */
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.nrpg-iso-toolbar > * { pointer-events: auto; }
+
+.nrpg-iso-hint {
+  font-size: 11px;
+  color: #9db8e8;
+  background: #0a0e24b8;
+  border: 1px solid #ffffff1a;
+  border-radius: 999px;
+  padding: 5px 10px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.nrpg-iso-retry {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #19f0ff55;
+  background: #0a0e24b8;
+  color: #7df3ff;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nrpg-iso-retry:hover { border-color: #19f0ff; }
+
+.nrpg-iso-err {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 2;
+  margin: 0;
+  max-width: calc(100% - 24px);
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #ff2bd688;
+  background: #1c0714ee;
+  color: #ffc4e6;
+  font-size: 12px;
+}
+
+/* 無障礙地點清單：視覺隱藏但鍵盤可達 */
+.nrpg-iso-a11y {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.nrpg-iso-a11y button:focus {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  width: auto;
+  height: auto;
+  clip: auto;
+  clip-path: none;
+  z-index: 5;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #19f0ff;
+  background: #04121c;
+  color: #eafcff;
+}
+
+@media (max-width: 640px) {
+  .nrpg-iso { height: clamp(300px, 52vh, 460px); }
+  .nrpg-iso-hint { display: none; }
+  .nrpg-iso-toolbar { top: 52px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nrpg-iso-toggle { transition: none; }
+}

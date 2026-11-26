@@ -1,0 +1,396 @@
+/* ============================================================
+   YOWEN ID — 登入 / 註冊 / 驗證碼 / 強制 API 配置
+   ============================================================ */
+
+.yid-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  overflow-y: auto;
+  background:
+    radial-gradient(70% 45% at 50% 42%, rgba(25, 240, 255, 0.08), transparent 70%),
+    radial-gradient(60% 40% at 50% 100%, rgba(255, 43, 214, 0.1), transparent 70%),
+    #02030a;
+}
+
+.yid-gate[hidden] { display: none; }
+
+.yid-card {
+  width: min(400px, 100%);
+  border: 1px solid rgba(25, 240, 255, 0.32);
+  border-radius: 4px;
+  clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+  background: linear-gradient(180deg, rgba(10, 16, 34, 0.96), rgba(4, 7, 16, 0.98));
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.65), 0 0 50px rgba(25, 240, 255, 0.08);
+  padding: 26px 22px 20px;
+  color: #e8f4ff;
+  position: relative;
+  overflow: hidden;
+}
+
+.yid-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02) 0 1px, transparent 1px 3px);
+}
+
+.yid-brand { text-align: center; margin-bottom: 18px; }
+.yid-brand .yid-logo {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.34em;
+  text-indent: 0.34em;
+  background: linear-gradient(120deg, #19f0ff, #8b5cff 60%, #ff2bd6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.yid-brand .yid-sub {
+  margin-top: 6px;
+  font-size: 10.5px;
+  letter-spacing: 0.3em;
+  color: rgba(190, 220, 245, 0.5);
+}
+
+/* 分頁 */
+.yid-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin-bottom: 16px;
+  border: 1px solid rgba(25, 240, 255, 0.25);
+}
+.yid-tabs button {
+  padding: 10px 0;
+  background: transparent;
+  border: none;
+  color: rgba(200, 225, 250, 0.6);
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.yid-tabs button.on {
+  background: linear-gradient(90deg, rgba(25, 240, 255, 0.16), rgba(139, 92, 255, 0.14));
+  color: #19f0ff;
+  text-shadow: 0 0 10px rgba(25, 240, 255, 0.5);
+}
+
+/* 登入方式 chips */
+.yid-methods {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.yid-methods button {
+  flex: 1 1 auto;
+  padding: 7px 4px;
+  border-radius: 6px;
+  border: 1px solid rgba(140, 180, 220, 0.2);
+  background: rgba(12, 20, 40, 0.5);
+  color: rgba(210, 230, 250, 0.7);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.yid-methods button.on {
+  border-color: #19f0ff;
+  color: #19f0ff;
+  box-shadow: 0 0 12px rgba(25, 240, 255, 0.2);
+}
+.yid-methods button.yid-qq.on { border-color: #38a8ff; color: #7ec8ff; box-shadow: 0 0 12px rgba(56, 168, 255, 0.25); }
+.yid-methods button.yid-wx.on { border-color: #2be07a; color: #6feaa5; box-shadow: 0 0 12px rgba(43, 224, 122, 0.25); }
+
+/* 表單 */
+.yid-field { display: block; margin-bottom: 12px; }
+.yid-field span {
+  display: block;
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  color: rgba(190, 220, 245, 0.6);
+  margin-bottom: 5px;
+}
+.yid-field input, .yid-field select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(140, 180, 220, 0.25);
+  background: rgba(4, 8, 18, 0.85);
+  color: #e8f4ff;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.yid-field input:focus, .yid-field select:focus {
+  border-color: #19f0ff;
+  box-shadow: 0 0 0 2px rgba(25, 240, 255, 0.12);
+}
+.yid-field input::placeholder { color: rgba(170, 200, 230, 0.35); }
+
+.yid-code-row { display: flex; gap: 8px; }
+.yid-code-row input { flex: 1 1 auto; }
+.yid-code-row button {
+  flex: 0 0 auto;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(25, 240, 255, 0.4);
+  background: rgba(25, 240, 255, 0.08);
+  color: #19f0ff;
+  font-size: 12.5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.yid-code-row button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* 模擬簡訊 / 郵件卡片 */
+.yid-sms {
+  margin: 4px 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 178, 91, 0.4);
+  background: linear-gradient(135deg, rgba(255, 178, 91, 0.1), rgba(20, 16, 10, 0.6));
+  padding: 10px 12px;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: #ffd9a8;
+}
+.yid-sms .yid-sms-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: rgba(255, 217, 168, 0.65);
+  margin-bottom: 4px;
+}
+.yid-sms b { font-size: 20px; letter-spacing: 0.3em; color: #fff; }
+.yid-sms .yid-sms-note {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(255, 178, 91, 0.3);
+  font-size: 10.5px;
+  color: rgba(255, 217, 168, 0.55);
+}
+
+/* 錯誤與提示 */
+.yid-msg {
+  min-height: 18px;
+  font-size: 12px;
+  color: #ff9ec7;
+  margin: -4px 0 10px;
+  line-height: 1.5;
+}
+.yid-msg.ok { color: #6feaa5; }
+
+/* 主按鈕 */
+.yid-go {
+  width: 100%;
+  padding: 12px 0;
+  border: 1px solid rgba(25, 240, 255, 0.55);
+  background: linear-gradient(135deg, rgba(25, 240, 255, 0.22), rgba(139, 92, 255, 0.2));
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-indent: 0.28em;
+  cursor: pointer;
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+.yid-go:hover { filter: brightness(1.2); }
+.yid-go:active { transform: scale(0.98); }
+.yid-go:disabled { opacity: 0.5; cursor: wait; }
+
+.yid-alt {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(190, 220, 245, 0.5);
+}
+.yid-alt button {
+  background: none;
+  border: none;
+  color: #19f0ff;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 2px 4px;
+}
+
+/* OAuth 模擬授權 */
+.yid-oauth {
+  text-align: center;
+  padding: 8px 0 2px;
+}
+.yid-oauth .yid-oauth-logo {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 10px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+}
+.yid-oauth.qq .yid-oauth-logo { background: linear-gradient(135deg, #38a8ff, #1668d6); box-shadow: 0 8px 26px rgba(56, 168, 255, 0.35); }
+.yid-oauth.wx .yid-oauth-logo { background: linear-gradient(135deg, #2be07a, #0da850); box-shadow: 0 8px 26px rgba(43, 224, 122, 0.35); }
+.yid-oauth p { font-size: 12.5px; color: rgba(210, 230, 250, 0.75); line-height: 1.7; margin: 0 0 14px; }
+.yid-oauth .yid-oauth-note { font-size: 10.5px; color: rgba(190, 220, 245, 0.4); margin-top: 10px; }
+.yid-oauth-btns { display: flex; gap: 8px; align-items: stretch; }
+.yid-oauth-btns .yid-go { width: auto; flex: 2; letter-spacing: 0.1em; text-indent: 0; }
+.yid-oauth-btns .yid-ghost {
+  flex: 1;
+  padding: 12px 0;
+  border: 1px solid rgba(140, 180, 220, 0.3);
+  background: transparent;
+  color: rgba(210, 230, 250, 0.7);
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+/* API 配置閘門 */
+.yid-api-head {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: #19f0ff;
+  margin-bottom: 6px;
+}
+.yid-api-desc {
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: rgba(210, 230, 250, 0.72);
+  margin: 0 0 14px;
+}
+.yid-api-desc b { color: #ffd9a8; }
+.yid-test-result {
+  font-size: 12px;
+  line-height: 1.6;
+  margin: -4px 0 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(140, 180, 220, 0.2);
+  background: rgba(8, 14, 30, 0.6);
+  color: rgba(210, 230, 250, 0.8);
+  max-height: 120px;
+  overflow-y: auto;
+}
+.yid-test-result.ok { border-color: rgba(43, 224, 122, 0.5); color: #6feaa5; }
+.yid-test-result.bad { border-color: rgba(255, 43, 214, 0.4); color: #ff9ec7; }
+.yid-api-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.yid-api-row .yid-go { width: auto; flex: 1; }
+.yid-api-row .yid-test {
+  flex: 0 0 40%;
+  padding: 12px 0;
+  border: 1px solid rgba(255, 178, 91, 0.45);
+  background: rgba(255, 178, 91, 0.08);
+  color: #ffd9a8;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+}
+.yid-demo-link {
+  margin-top: 12px;
+  text-align: center;
+}
+.yid-demo-link button {
+  background: none;
+  border: none;
+  color: rgba(190, 220, 245, 0.45);
+  font-size: 11.5px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* 登入模式、說明與可及性 */
+.yid-environment {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 178, 91, 0.38);
+  border-radius: 999px;
+  color: #ffd9a8;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+}
+.yid-environment.remote {
+  border-color: rgba(43, 224, 122, 0.38);
+  color: #6feaa5;
+}
+.yid-notice {
+  margin: -4px 0 14px;
+  padding: 9px 11px;
+  border-left: 2px solid rgba(255, 178, 91, 0.65);
+  background: rgba(255, 178, 91, 0.06);
+  color: rgba(255, 217, 168, 0.78);
+  font-size: 11.5px;
+  line-height: 1.65;
+}
+.yid-notice.remote {
+  border-left-color: rgba(43, 224, 122, 0.65);
+  background: rgba(43, 224, 122, 0.05);
+  color: rgba(170, 235, 199, 0.8);
+}
+.yid-field-hint {
+  margin: -7px 0 12px;
+  color: rgba(190, 220, 245, 0.52);
+  font-size: 11px;
+  line-height: 1.55;
+}
+.yid-gate {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: max(20px, env(safe-area-inset-top));
+  padding-right: max(20px, env(safe-area-inset-right));
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+  padding-left: max(20px, env(safe-area-inset-left));
+}
+.yid-card { flex: 0 0 auto; margin: auto 0; }
+.yid-tabs button,
+.yid-methods button,
+.yid-code-row button,
+.yid-alt button { min-height: 44px; }
+.yid-field input, .yid-field select { min-height: 46px; font-size: 16px; }
+.yid-code-row button { min-width: 124px; }
+.yid-go, .yid-oauth-btns .yid-ghost { min-height: 46px; }
+.yid-go:focus-visible,
+.yid-tabs button:focus-visible,
+.yid-methods button:focus-visible,
+.yid-code-row button:focus-visible,
+.yid-alt button:focus-visible,
+.yid-oauth-btns button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.yid-msg:empty { min-height: 8px; }
+
+@media (max-width: 560px) {
+  .yid-gate {
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    padding-left: max(12px, env(safe-area-inset-left));
+  }
+  .yid-card { padding: 20px 17px 17px; }
+  .yid-brand { margin-bottom: 14px; }
+  .yid-brand .yid-logo { font-size: 27px; }
+  .yid-code-row { gap: 7px; }
+  .yid-code-row button { min-width: 116px; padding: 0 10px; }
+}
+
+@media (max-width: 350px) {
+  .yid-code-row { flex-direction: column; }
+  .yid-code-row button { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yid-card *, .yid-card *::before, .yid-card *::after { transition: none !important; }
+}

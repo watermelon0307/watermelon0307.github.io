@@ -1,0 +1,384 @@
+/* 餘溫・精緻主題層：分區玻璃、編輯排版、細緻狀態與城市 3D 安全模式。 */
+
+:root {
+  --ease-ui: cubic-bezier(.2, .75, .25, 1);
+}
+
+body,
+.app,
+.card,
+.list,
+.sheet,
+.tabbar,
+.topbar,
+.btn,
+.seg,
+.ui-opt {
+  transition: background-color .24s var(--ease-ui), background-image .24s var(--ease-ui),
+    border-color .2s var(--ease-ui), color .2s var(--ease-ui), box-shadow .24s var(--ease-ui);
+}
+
+:root:not([data-ui="cyber"]) .hero-head h1,
+:root:not([data-ui="cyber"]) .sheet h2,
+:root:not([data-ui="cyber"]) .ob-h {
+  font-family: var(--serif);
+  font-weight: 600;
+  letter-spacing: .075em;
+}
+
+:root:not([data-ui="cyber"]) .hero-head h1 {
+  font-size: 31px;
+  line-height: 1.25;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .14em;
+  color: var(--ink-2);
+}
+
+.small.muted,
+.muted {
+  color: var(--ink-3);
+}
+
+/* 玻璃不是單純透明：上緣高光、內反射與接觸陰影共同定義材質。 */
+:root:not([data-ui="cyber"]) :is(.card, .list, .sheet, .tabbar) {
+  border: 1px solid var(--edge, var(--line));
+  box-shadow: inset 0 1px 0 var(--hl, rgba(255,255,255,.2)), var(--panel-shadow, var(--shadow));
+  backdrop-filter: blur(20px) saturate(1.28);
+  -webkit-backdrop-filter: blur(20px) saturate(1.28);
+}
+
+:root:not([data-ui="cyber"]) :is(.card, .list) {
+  background: color-mix(in srgb, var(--surface) 91%, transparent);
+}
+
+:root:not([data-ui="cyber"]) .sheet {
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  border-bottom: 0;
+  box-shadow: inset 0 1px 0 var(--hl), 0 -24px 64px -30px rgba(0,0,0,.5);
+}
+
+:root:not([data-ui="cyber"]) .tabbar {
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  box-shadow: inset 0 1px 0 var(--hl), 0 14px 36px -18px rgba(0,0,0,.45);
+}
+
+:root:not([data-ui="cyber"]) .topbar {
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--edge, var(--line)) 58%, transparent);
+  backdrop-filter: blur(22px) saturate(1.25);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+}
+
+.list-item {
+  min-height: 58px;
+  transition: background-color .16s var(--ease-ui);
+}
+
+.list-item:active {
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface-2));
+}
+
+.list-item .ic {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.34), 0 4px 12px -6px rgba(0,0,0,.45);
+}
+
+.tabbar a {
+  transition: color .18s var(--ease-ui), transform .18s var(--ease-ui);
+}
+
+.tabbar a.active::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--glow, transparent);
+}
+
+.tabbar a:active {
+  transform: translateY(1px);
+}
+
+.btn {
+  min-height: 42px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--hl, #fff) 55%, transparent);
+  transition: transform .14s var(--ease-ui), background-color .18s var(--ease-ui), box-shadow .18s var(--ease-ui);
+}
+
+.btn.primary {
+  color: var(--on-accent, #fff);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.26), 0 8px 20px -10px var(--glow, var(--accent));
+  text-shadow: 0 1px 1px rgba(0,0,0,.12);
+}
+
+.btn:hover:not(:disabled),
+.icon-btn:hover {
+  filter: brightness(1.035);
+}
+
+.btn:active {
+  transform: scale(.975);
+}
+
+:is(.btn, .icon-btn, .list-item, .ui-opt, .seg button):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.seg {
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.06), 0 1px 0 var(--hl, transparent);
+}
+
+.seg button {
+  transition: color .16s var(--ease-ui), background-color .18s var(--ease-ui), box-shadow .18s var(--ease-ui);
+}
+
+.seg button.on {
+  box-shadow: inset 0 1px 0 var(--hl, rgba(255,255,255,.3)), 0 2px 8px rgba(0,0,0,.10);
+}
+
+.input,
+.textarea,
+.select {
+  transition: border-color .18s var(--ease-ui), box-shadow .18s var(--ease-ui), background-color .18s var(--ease-ui);
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--line));
+  box-shadow: 0 0 0 3px var(--accent-soft), inset 0 1px 0 var(--hl, transparent);
+}
+
+/* 主題選擇器：預覽像一扇小窗，選取態不只依賴顏色。 */
+.sheet .ui-pick {
+  gap: 14px 12px;
+  padding: 2px 1px 10px;
+}
+
+.ui-opt {
+  position: relative;
+  padding: 7px 7px 12px;
+  border-color: color-mix(in srgb, var(--edge, var(--line)) 72%, transparent);
+  background: color-mix(in srgb, var(--surface-2) 78%, transparent);
+  box-shadow: inset 0 1px 0 var(--hl, transparent);
+  transition: transform .2s var(--ease-ui), border-color .2s var(--ease-ui), box-shadow .2s var(--ease-ui), background-color .2s var(--ease-ui);
+}
+
+.ui-opt:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
+}
+
+.ui-opt:active {
+  transform: translateY(0) scale(.985);
+}
+
+.ui-opt.on {
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--line));
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface-2));
+  box-shadow: inset 0 1px 0 var(--hl, transparent), 0 0 0 2px var(--accent-soft), 0 12px 26px -20px var(--glow, var(--accent));
+}
+
+.ui-opt.on::after {
+  content: "✓";
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: var(--on-accent, #fff);
+  background: var(--accent);
+  border: 1px solid rgba(255,255,255,.55);
+  box-shadow: 0 4px 12px rgba(0,0,0,.22);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ui-opt .pv {
+  height: 102px;
+  margin-bottom: 8px;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.24), inset 0 1px 0 rgba(255,255,255,.32);
+}
+
+.ui-opt .pv::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(118deg, rgba(255,255,255,.20), transparent 32%, transparent 72%, rgba(255,255,255,.07));
+}
+
+.ui-opt .pv-card {
+  border: 1px solid rgba(255,255,255,.30);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.32), 0 5px 12px -8px rgba(0,0,0,.45);
+}
+
+.ui-opt .pv-btn {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.30), 0 4px 10px -5px rgba(0,0,0,.32);
+}
+
+.ui-opt .t {
+  font-size: 14px;
+  letter-spacing: .035em;
+}
+
+.ui-opt .d {
+  min-height: 34px;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* 新霓市 3D 安全模式：永遠保留可見的城市、返回與重試入口。 */
+.city3d {
+  position: relative;
+  overflow: hidden;
+  background: #060a1c;
+}
+
+.yw-city-fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  min-height: 360px;
+  overflow: hidden;
+  color: #edf7ff;
+  background: #05091a;
+}
+
+.yw-city-poster,
+.yw-city-poster svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.yw-city-poster::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(3,7,20,.04) 18%, rgba(3,7,20,.24) 46%, rgba(3,7,20,.94) 100%);
+}
+
+.yw-city-safe-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: 22px 18px 18px;
+}
+
+.yw-city-safe-kicker {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+  color: #72e8f7;
+  font: 700 9px/1.4 ui-monospace, SFMono-Regular, Consolas, "PingFang TC", monospace;
+  letter-spacing: .14em;
+}
+
+.yw-city-safe-kicker i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #72e8f7;
+  box-shadow: 0 0 10px rgba(114,232,247,.75);
+}
+
+.yw-city-safe-card h3 {
+  margin: 0 0 7px;
+  color: #f4f7f2;
+  font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: .055em;
+}
+
+.yw-city-safe-card p {
+  max-width: 390px;
+  margin: 0;
+  color: rgba(224,237,247,.78);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.yw-city-safe-note {
+  margin-top: 8px;
+  color: rgba(174,205,220,.64);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.yw-city-safe-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-top: 15px;
+}
+
+.yw-city-safe-actions button {
+  min-height: 43px;
+  padding: 0 12px;
+  border-radius: 13px;
+  font-size: 13px;
+  font-weight: 700;
+  transition: transform .15s var(--ease-ui), filter .15s var(--ease-ui);
+}
+
+.yw-city-safe-actions button:active {
+  transform: scale(.975);
+}
+
+.yw-city-safe-primary {
+  color: #06121c;
+  border: 1px solid rgba(207,252,255,.72);
+  background: linear-gradient(135deg, #b8f5f4, #75dce9);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.62), 0 8px 22px -12px rgba(80,225,242,.65);
+}
+
+.yw-city-safe-secondary {
+  color: #e9f7ff;
+  border: 1px solid rgba(158,213,233,.28);
+  background: rgba(16,31,55,.72);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.yw-city-safe-actions button:hover {
+  filter: brightness(1.06);
+}
+
+:root[data-fx="lite"] :is(.card, .list, .sheet, .tabbar),
+:root[data-fx="lite"] .yw-city-safe-secondary {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+@media (max-width: 370px) {
+  .sheet .ui-pick { gap: 10px 8px; }
+  .ui-opt .pv { height: 88px; }
+  .ui-opt .d { font-size: 10.5px; }
+  .yw-city-safe-card { padding: 18px 13px 13px; }
+  .yw-city-safe-card h3 { font-size: 21px; }
+  .yw-city-safe-actions button { padding: 0 8px; font-size: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-opt:hover { transform: none; }
+}

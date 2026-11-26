@@ -1,0 +1,43 @@
+/* 新功能入口＋版本代號＋城市頁籤列質感修復 */
+
+/* 「新功能」入口沿用 app 原生 .list-item 外觀，僅補 chevron 與點按回饋 */
+.ywd-item .ywd-chev { color: var(--ink-3, #8a93a8); font-size: 18px; margin-left: auto; padding-left: 8px; }
+.ywd-item .ic { display: grid; place-items: center; font-size: 15px; }
+.ywd-item:active { transform: scale(.985); }
+.ywd-item { transition: transform .12s ease; }
+
+/* 版本代號：頁面底部，淡、置中、可選取 */
+.ywd-build {
+  margin: 22px 0 8px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--ink-3, #8a93a8);
+  opacity: .75;
+  user-select: text;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 城市頁籤列：seg 讓位、「衣櫃」併入同一列，不再換行 */
+.city-tabs {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 6px;
+  align-items: stretch;
+}
+.city-tabs .seg {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+.city-tabs .seg button { font-size: 13px; }
+.city-tabs .ywc-tabbtn {
+  flex: none;
+  align-self: stretch;
+  height: auto;
+  min-height: 44px;
+  margin: 0 !important;
+  padding: 0 14px;
+  white-space: nowrap;
+  border-radius: 12px;
+}

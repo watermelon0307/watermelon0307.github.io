@@ -1,0 +1,335 @@
+/* WARMTH CLOSET — 餘溫衣間 · Soft Editorial
+ * 奶油白 #F7F5F1 · 燕麥 #E8DFD3 · 暖棕 #B49977 · 墨黑 #343230 · 霧粉 #D6B8C0
+ */
+
+.ywc-tabbtn {
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid #ffffff24;
+  background: #0a0e24b8;
+  color: #efe6da;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.ywc-tabbtn:hover { border-color: #b4997788; color: #fff; }
+.ywc-tabbtn.on {
+  background: linear-gradient(120deg, #e8dfd3, #d6b8c0);
+  color: #343230;
+  border-color: transparent;
+  box-shadow: 0 0 14px #d6b8c055;
+}
+
+/* 面板 */
+.ywc {
+  margin: 12px 12px 0;
+  border-radius: 22px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #faf8f4, #f3eee6);
+  color: #343230;
+  border: 1px solid #e8dfd3;
+  box-shadow: 0 16px 44px rgba(52, 50, 48, 0.16);
+}
+.ywc[hidden] { display: none; }
+.ywc.is-busy { opacity: 0.7; pointer-events: none; }
+
+.ywc-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px 12px;
+}
+.ywc-title { display: grid; gap: 2px; min-width: 0; }
+.ywc-title b { font-size: 15px; letter-spacing: 0.12em; color: #343230; }
+.ywc-title span { font-size: 11.5px; color: #8a7f72; letter-spacing: 0.04em; }
+.ywc-close {
+  margin-left: auto;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid #e0d5c6;
+  background: #fff;
+  color: #8a7f72;
+  font-size: 15px;
+  cursor: pointer;
+}
+.ywc-close:hover { color: #343230; border-color: #b49977; }
+
+.ywc-tabs { display: flex; gap: 6px; padding: 0 18px 10px; }
+.ywc-tabs button {
+  height: 34px; padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid #e0d5c6;
+  background: #fff;
+  color: #8a7f72;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer;
+}
+.ywc-tabs button.on { background: #343230; color: #f7f5f1; border-color: #343230; }
+
+/* 統計 */
+.ywc-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 0 18px 12px;
+}
+.ywc-stat {
+  background: #fff;
+  border: 1px solid #ece4d8;
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+.ywc-stat b { font-size: 19px; color: #343230; font-variant-numeric: tabular-nums; }
+.ywc-stat span { font-size: 10.5px; color: #a39484; letter-spacing: 0.05em; }
+.ywc-money b { color: #b49977; }
+
+.ywc-err {
+  margin: 0 18px 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #d6b8c0;
+  background: #f7e8ec;
+  color: #a04b5e;
+  font-size: 12px;
+}
+.ywc-err[hidden] { display: none; }
+
+.ywc-body { padding: 0 18px 18px; max-height: 62vh; overflow: auto; }
+
+/* 工具列 */
+.ywc-toolbar { display: grid; gap: 10px; margin-bottom: 12px; }
+.ywc-cats { display: flex; flex-wrap: wrap; gap: 6px; }
+.ywc-cats button {
+  height: 30px; padding: 0 13px;
+  border-radius: 999px;
+  border: 1px solid #e0d5c6;
+  background: #fff;
+  color: #8a7f72;
+  font-size: 12px; font-weight: 600;
+  cursor: pointer;
+}
+.ywc-cats button.on { background: #b49977; color: #fff; border-color: #b49977; }
+.ywc-tools-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.ywc-tools-row input[type="search"] {
+  flex: 1 1 160px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #e0d5c6;
+  background: #fff;
+  padding: 0 12px;
+  font-size: 13px;
+  color: #343230;
+}
+.ywc-tools-row button {
+  height: 36px; padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid #e0d5c6;
+  background: #fff;
+  color: #8a7f72;
+  font-size: 12.5px; font-weight: 700;
+  cursor: pointer;
+}
+.ywc-tools-row button.on { background: #d6b8c0; color: #343230; border-color: #d6b8c0; }
+.ywc-tools-row [data-ywc-addopen] { background: #343230; color: #f7f5f1; border-color: #343230; }
+
+/* 新增表單 */
+.ywc-add {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  border: 1px dashed #b49977;
+  background: #fff;
+}
+.ywc-add input, .ywc-add select {
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid #e0d5c6;
+  padding: 0 12px;
+  font-size: 13px;
+  color: #343230;
+  background: #fdfcfa;
+}
+.ywc-add-row { display: flex; gap: 8px; }
+.ywc-add-row > * { flex: 1; }
+.ywc-add-row button {
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid #e0d5c6;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  color: #8a7f72;
+}
+.ywc-add-row .ywc-primary { background: #b49977; color: #fff; border-color: #b49977; }
+
+/* 卡片網格 */
+.ywc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 12px;
+}
+.ywc-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid #ece4d8;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+.ywc-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(52,50,48,0.12); border-color: #b49977; }
+.ywc-thumb {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(150deg, #f3ede3, #e8dfd3);
+}
+.ywc-thumb span {
+  font-size: 44px;
+  font-weight: 900;
+  color: #b49977;
+  opacity: 0.85;
+}
+.ywc-thumb-上衣 { background: linear-gradient(150deg, #f3ede3, #e8dfd3); }
+.ywc-thumb-下身 { background: linear-gradient(150deg, #eef0f2, #dfe4e8); }
+.ywc-thumb-外套 { background: linear-gradient(150deg, #f1eae6, #e5d5cc); }
+.ywc-thumb-洋裝 { background: linear-gradient(150deg, #f6ecef, #e8d3da); }
+.ywc-thumb-鞋子 { background: linear-gradient(150deg, #eceae4, #dcd6cc); }
+.ywc-thumb-配件 { background: linear-gradient(150deg, #eef0e9, #dfe3d5); }
+.ywc-card-meta { padding: 10px 12px 12px; display: grid; gap: 3px; }
+.ywc-card-meta b { font-size: 13px; color: #343230; }
+.ywc-card-meta small { font-size: 10.5px; color: #a39484; }
+.ywc-fav {
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 1px solid #ece4d8;
+  background: #ffffffee;
+  color: #c9b6a2;
+  font-size: 15px;
+  cursor: pointer;
+  display: grid; place-items: center;
+}
+.ywc-fav.on { color: #d66; border-color: #d6b8c0; background: #fbeef1; }
+
+.ywc-empty {
+  padding: 28px 16px;
+  text-align: center;
+  color: #a39484;
+  font-size: 13px;
+  background: #fff;
+  border: 1px dashed #e0d5c6;
+  border-radius: 14px;
+}
+
+/* 詳情 */
+.ywc-detail {
+  position: fixed;
+  inset: 0;
+  z-index: 9600;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(52, 50, 48, 0.4);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.ywc-detail-card {
+  position: relative;
+  width: min(320px, 100%);
+  background: #faf8f4;
+  border-radius: 20px;
+  border: 1px solid #e8dfd3;
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+}
+.ywc-detail-thumb { border-radius: 14px; }
+.ywc-detail-card h3 { margin: 0; font-size: 17px; color: #343230; }
+.ywc-detail-card dl { margin: 0; display: grid; gap: 6px; }
+.ywc-detail-card dl > div { display: flex; justify-content: space-between; font-size: 12.5px; }
+.ywc-detail-card dt { color: #a39484; }
+.ywc-detail-card dd { margin: 0; color: #343230; font-weight: 600; }
+.ywc-detail-acts { display: flex; gap: 8px; }
+.ywc-detail-acts .ywc-fav { position: static; width: auto; height: 38px; padding: 0 14px; border-radius: 10px; font-size: 13px; }
+.ywc-detail-acts .ywc-danger {
+  height: 38px; padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid #d6b8c0;
+  background: #fbeef1;
+  color: #a04b5e;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ywc-detail-card > .ywc-close { position: absolute; top: 12px; right: 12px; margin: 0; }
+
+/* 商城 */
+.ywc-mall-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.ywc-balance { font-size: 13px; color: #8a7f72; }
+.ywc-balance b { color: #b49977; font-size: 16px; }
+.ywc-mall-note { font-size: 10.5px; color: #a39484; }
+.ywc-mall-list { display: grid; gap: 8px; }
+.ywc-mall-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #ece4d8;
+  border-radius: 14px;
+}
+.ywc-mall-meta { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.ywc-mall-meta b { font-size: 13.5px; color: #343230; }
+.ywc-mall-meta small { font-size: 10.5px; color: #a39484; }
+.ywc-mall-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.ywc-price { font-size: 13px; font-weight: 800; color: #b49977; font-variant-numeric: tabular-nums; }
+.ywc-buy {
+  height: 34px; padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid #343230;
+  background: #343230;
+  color: #f7f5f1;
+  font-size: 12.5px; font-weight: 700;
+  cursor: pointer;
+}
+.ywc-buy:disabled { opacity: 0.4; cursor: not-allowed; }
+.ywc-owned { font-size: 11px; color: #a39484; }
+.ywc-wish {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid #ece4d8;
+  background: #fff;
+  color: #c9b6a2;
+  cursor: pointer;
+  font-size: 15px;
+}
+.ywc-wish.on { color: #d66; border-color: #d6b8c0; background: #fbeef1; }
+
+@media (max-width: 640px) {
+  .ywc-stats { grid-template-columns: repeat(2, 1fr); }
+  .ywc-body { max-height: 56vh; }
+  .ywc-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ywc-card { transition: none; }
+}
