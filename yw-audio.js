@@ -49,10 +49,13 @@
     chatOpen:false, chatMessages:[], singing:false, singSong:null, singLine:"", mini:settings.mini };
   const audio = new Audio(); audio.preload="metadata"; audio.volume=settings.volume; audio.crossOrigin="anonymous";
   let objectUrl=null, cloudResolving=false;
+  /* 網易雲（本機 ncm_web 伺服器）：搜尋狀態只放記憶體，加入歌單的才存 IndexedDB */
+  const Ncm=window.YWNcm||null;
+  const N={draft:"",query:"",results:[],total:0,busy:false,error:"",status:null,retried:false,lastSync:0};
 
   function chatId() { const m=location.hash.match(/#\/chat\/([^/?&#]+)/); return m?decodeURIComponent(m[1]):settings.lastChatId||""; }
   function currentTrack() { return S.tracks.find(t=>t.id===settings.currentId)||null; }
-  function sourceName(t) { return ({local:"本機音檔",netease:"網易雲分享",qq:"QQ 音樂分享",itunes:"iTunes 試聽",recommend:"TA 推薦",elevenmusic:"Eleven Music 創作"})[t?.source]||"音樂"; }
+  function sourceName(t) { if(t?.ncmId)return "網易雲音樂"; return ({local:"本機音檔",netease:"網易雲分享",qq:"QQ 音樂分享",itunes:"iTunes 試聽",recommend:"TA 推薦",elevenmusic:"Eleven Music 創作"})[t?.source]||"音樂"; }
   function parseLrc(text) {
     const out=[]; String(text||"").split(/\r?\n/).forEach(line=>{const ms=[...line.matchAll(/\[(\d+):(\d+(?:\.\d+)?)\]/g)];if(!ms.length)return;const txt=line.replace(/\[[^\]]+\]/g,"").trim();ms.forEach(m=>out.push({time:+m[1]*60 + +m[2],text:txt||"♪"}));});
     return out.sort((a,b)=>a.time-b.time);
@@ -101,7 +104,7 @@
   }
   function render(){const root=$("#ywAudioRoot");if(root)root.innerHTML=rootHtml();wire();renderMini();}
 
-  function nowHtml(){const t=currentTrack();if(!t)return `<div class="ywm-page ywm-now"><div class="ywm-empty">還沒有音樂。<br>先去「歌單」匯入手機裡的音檔，或貼上網易雲／QQ 音樂分享。</div><div class="ywm-actions"><button class="ywm-btn red" data-tab="list">＋ 匯入音樂</button><button class="ywm-btn" data-tab="voice">設定 TA 的音色</button></div><p class="ywm-note">角色點歌、歌曲／歌詞討論、安靜模式與一起聽紀錄從第一次開啟就能使用。</p></div>`;
+  function nowHtml(){const t=currentTrack();if(!t)return `<div class="ywm-page ywm-now"><div class="ywm-empty">還沒有音樂。<br>先去「歌單」匯入手機裡的音檔，或搜尋網易雲音樂，或貼上 QQ 音樂分享。</div><div class="ywm-actions"><button class="ywm-btn red" data-tab="list">＋ 匯入音樂</button><button class="ywm-btn" data-tab="voice">設定 TA 的音色</button></div><p class="ywm-note">角色點歌、歌曲／歌詞討論、安靜模式與一起聽紀錄從第一次開啟就能使用。</p></div>`;
     return `<div class="ywm-page ywm-now"><div class="ywm-disc-wrap"><div class="ywm-disc ${S.playing?"playing":""}">${t.cover?`<img src="${esc(t.cover)}" alt="">`:""}</div></div>
       <h2 class="ywm-song">${esc(t.name)}</h2><div class="ywm-artist">${esc(t.artist||"未知歌手")}</div>
       <div class="ywm-badges"><span class="ywm-badge">${sourceName(t)}</span>${t.preview?`<span class="ywm-badge">30 秒試聽${t.previewName?`：${esc(t.previewName)}`:""}</span>`:""}</div>
@@ -115,15 +118,35 @@
   function dockHtml(){const t=currentTrack();if(!t||S.tab==="now")return "";return `<div class="ywm-dock"><div class="ywm-dock-info"><b>${esc(t.name)}</b><small>${esc(t.artist)} · ${sourceName(t)}</small></div><button data-toggle>${S.playing?"⏸":"▶"}</button><button data-tab="now">♫</button></div>`;}
 
   function listHtml(){const filter=S.listFilter||"all",visible=filter==="favorites"?S.tracks.filter(t=>t.favorite):S.tracks,favoriteCount=S.tracks.reduce((n,t)=>n+(t.favorite?1:0),0);return `<div class="ywm-page"><div class="ywm-section-title">匯入音樂<span>目前帳號的私人曲庫</span></div>
-    <div class="ywm-import"><button data-import="local">📁 本機音樂<small>一次多選音檔 / .lrc</small></button><button class="netease" data-import="netease">網易雲音樂<small>貼上分享文字</small></button><button class="qq" data-import="qq">QQ 音樂<small>貼上分享文字</small></button></div>
-    <p class="ywm-note">手機瀏覽器不能讀取網易雲／QQ App 的 DRM 音樂庫，所以不會要求你的帳密。分享匯入會建立歌曲資訊；播放時嘗試尋找 iTunes 30 秒試聽，完整歌曲請選「本機音樂」。</p>
+    <div class="ywm-import"><button data-import="local">📁 本機音樂<small>一次多選音檔 / .lrc</small></button><button class="netease" data-import="netease">網易雲音樂<small>${Ncm?"搜尋 / 貼上分享":"貼上分享文字"}</small></button><button class="qq" data-import="qq">QQ 音樂<small>貼上分享文字</small></button></div>
+    <p class="ywm-note">網易雲音樂透過你手機上的本機伺服器（ncm_web）搜尋與播放，登入只在那一頁進行，這裡不會經手帳密。QQ 音樂與貼上的分享文字只建立歌曲資訊，播放時嘗試尋找 iTunes 30 秒試聽；完整歌曲也可選「本機音樂」。</p>
     <div id="ywmImportBox">${S.importing?importHtml():""}</div>
     <div class="ywm-section-title">我的歌單<span>${S.tracks.length} 首</span></div>
     <div class="ywm-list-filters" role="group" aria-label="歌單篩選"><button data-filter="all" class="${filter==="all"?"on":""}" aria-pressed="${filter==="all"}">全部 ${S.tracks.length}</button><button data-filter="favorites" class="${filter==="favorites"?"on":""}" aria-pressed="${filter==="favorites"}">收藏 ${favoriteCount}</button></div>
     ${visible.length?visible.map((t,i)=>`<div class="ywm-track ${t.id===settings.currentId?"on":""}" data-track="${esc(t.id)}"><span class="ywm-track-index">${String(i+1).padStart(2,"0")}</span><div class="ywm-track-info"><div class="ywm-track-name">${esc(t.name)}</div><div class="ywm-track-meta">${esc(t.artist)} · ${sourceName(t)}${t.preview?" · 試聽":""}</div></div><button class="ywm-favorite ${t.favorite?"on":""}" data-favorite="${esc(t.id)}" aria-pressed="${!!t.favorite}" aria-label="${t.favorite?"取消收藏":"收藏"} ${esc(t.name)}" title="${t.favorite?"取消收藏":"收藏"}">${t.favorite?"♥":"♡"}</button><button data-lyric="${esc(t.id)}" title="編輯歌詞" aria-label="編輯 ${esc(t.name)} 歌詞">詞</button><button data-del="${esc(t.id)}" title="刪除" aria-label="刪除 ${esc(t.name)}">×</button></div>`).join(""):`<div class="ywm-empty">${filter==="favorites"&&S.tracks.length?"還沒有收藏歌曲，點歌曲右側的 ♡ 就能收藏":"歌單還是空的"}</div>`}
     <div id="ywmLyricEditor"></div></div>`;
   }
-  function importHtml(){return `<div class="ywm-card"><div class="ywm-field"><span>${S.importSource==="qq"?"QQ 音樂":"網易雲"}分享文字 / 每行「歌手 - 歌名」</span><textarea id="ywmShareText" placeholder="例如：分享周杰伦的单曲《晴天》\n或：周杰倫 - 晴天"></textarea></div><div class="ywm-form-row"><button class="ywm-btn" data-cancel-import>取消</button><button class="ywm-btn red" data-parse-import>匯入歌單</button></div></div>`;}
+  function ncmStatusText(){if(N.error)return N.error;const st=N.status;if(!st)return "正在連線本機伺服器…";return st.loggedIn?`已登入：${st.nickname||"網易雲帳號"}`:"尚未登入：只能播放免費且未受地區限制的歌，VIP 歌曲為 30 秒試聽";}
+  function ncmHtml(){return `<div class="ywm-card ywm-ncm"><form id="ywmNcmForm" class="ywm-ncm-search"><input id="ywmNcmQ" type="search" enterkeyhint="search" autocomplete="off" placeholder="搜尋歌曲、歌手、專輯" aria-label="搜尋網易雲音樂" value="${esc(N.draft)}"><button class="ywm-btn red" ${N.busy?"disabled":""}>${N.busy?"搜尋中…":"搜尋"}</button></form>
+    <p class="ywm-note ywm-ncm-status ${N.error?"err":""}" role="status">${esc(ncmStatusText())} · <a href="${esc(Ncm.base)}/" target="_blank" rel="noopener">開啟登入頁</a></p>
+    ${N.results.map((s,i)=>`<div class="ywm-track ywm-ncm-row ${s.noCopyright?"off":""}" data-ncm-add="${i}">${s.cover?`<img src="${esc(Ncm.cover(s.cover,120))}" alt="" loading="lazy">`:`<span class="ywm-ncm-ph"></span>`}<div class="ywm-track-info"><div class="ywm-track-name">${esc(s.name)}${s.fee===1?`<span class="ywm-ncm-pill">VIP</span>`:""}${s.noCopyright?`<span class="ywm-ncm-pill">無法播放</span>`:""}</div><div class="ywm-track-meta">${esc(s.artists.join(" / "))}${s.album?` · ${esc(s.album)}`:""}</div></div><span class="ywm-ncm-dur">${fmt(s.duration/1000)}</span></div>`).join("")}
+    ${N.results.length&&N.results.length<N.total?`<button class="ywm-btn" data-ncm-more ${N.busy?"disabled":""}>載入更多</button>`:""}
+    <details class="ywm-ncm-share"><summary>改用貼上分享文字</summary>${shareHtml()}</details></div>`;}
+  async function ncmCheck(){if(!Ncm)return;try{N.status=await Ncm.status();N.error="";}catch(e){N.status=null;N.error=e.message;}if(S.importing&&S.importSource==="netease"&&!N.busy)render();}
+  async function ncmSearch(more){const q=more?N.query:N.draft.trim();if(!q||N.busy)return;N.busy=true;N.error="";if(!more){N.query=q;N.results=[];N.total=0;}render();
+    try{const d=await Ncm.search(N.query,more?N.results.length:0);N.results=more?N.results.concat(d.songs):d.songs;N.total=d.total||N.results.length;if(!N.results.length)N.error=`找不到「${N.query}」，換個關鍵字試試`;}catch(e){N.error=e.message;}
+    N.busy=false;render();}
+  async function ncmAdd(i){const s=N.results[i];if(!s)return;let t=S.tracks.find(x=>x.ncmId===s.id);
+    if(!t){const d=await Ncm.playUrl(s.id);if(!d.url)return toast(d.message||"這首暫時無法播放",true);N.prefetch={id:s.id,data:d}; /* 能播才加入歌單 */
+      t=await idbPut({id:"tr_ncm_"+s.id,name:String(s.name).slice(0,100),artist:s.artists.join(" / ").slice(0,80)||"未知歌手",album:s.album||"",source:"netease",ncmId:s.id,cover:Ncm.cover(s.cover,500),duration:Math.round(s.duration/1000),lyricsText:"",createdAt:Date.now()});await refreshTracks();}
+    return playTrack(t.id);}
+  /* 網易雲播放地址約 20 分鐘過期，所以每次播放都重取、不存進曲庫 */
+  async function resolveNcm(t){const pre=N.prefetch;N.prefetch=null;const d=pre&&pre.id===t.ncmId?pre.data:await Ncm.playUrl(t.ncmId);if(!d.url)throw new Error(d.message||"這首暫時無法播放");const trial=!!d.freeTrial;if(!!t.preview!==trial){t.preview=trial;idbPut(t).catch(()=>{});}if(trial)toast("這首只有試聽片段");return d.url;}
+  async function ncmLyrics(t){if(t.lyricsText||t.ncmLyricChecked)return;try{const d=await Ncm.lyric(t.ncmId);t.ncmLyricChecked=true;if(!d.lrc)return;t.lyricsText=d.lrc;await idbPut(t);if(settings.currentId===t.id){S.lyrics=parseLrc(t.lyricsText);S.lyricIndex=-1;render();}}catch{/* 歌詞拿不到不影響播放 */}}
+  function ncmSync(force){if(!Ncm||!Ncm.online)return;const now=Date.now();if(!force&&now-N.lastSync<5000)return;N.lastSync=now;const t=currentTrack();
+    Ncm.syncNow(t?{id:t.ncmId||t.id,name:t.name,artists:[t.artist||""],album:t.album||"",cover:t.cover||"",position:Math.round((audio.currentTime||0)*100)/100,duration:Math.round((audio.duration||t.duration||0)*100)/100,playing:!audio.paused&&!audio.ended,lyric:S.lyrics[S.lyricIndex]?.text||""}:{playing:false});}
+  function importHtml(){return Ncm&&S.importSource==="netease"?ncmHtml():`<div class="ywm-card">${shareHtml()}</div>`;}
+  function shareHtml(){return `<div class="ywm-field"><span>${S.importSource==="qq"?"QQ 音樂":"網易雲"}分享文字 / 每行「歌手 - 歌名」</span><textarea id="ywmShareText" placeholder="例如：分享周杰伦的单曲《晴天》\n或：周杰倫 - 晴天"></textarea></div><div class="ywm-form-row"><button class="ywm-btn" data-cancel-import>取消</button><button class="ywm-btn red" data-parse-import>匯入歌單</button></div>`;}
 
   /* ---------- Eleven Music：真正的雲端作曲，完成後存入既有私人歌單 ---------- */
   const MUSIC_EXAMPLES=[
@@ -286,11 +309,15 @@
     render();await refreshTracks();
   }
   async function resolveCloud(t){if(t.url)return t.url;if(cloudResolving)throw new Error("正在尋找試聽，請稍候");cloudResolving=true;toast("正在尋找這首歌的公開試聽…");try{const q=encodeURIComponent(`${t.name} ${t.artist||""}`);const r=await fetch(`https://itunes.apple.com/search?term=${q}&media=music&entity=song&country=TW&lang=zh_tw&limit=1`);const j=await r.json();const hit=j.results?.[0];if(!hit?.previewUrl)throw new Error("找不到公開試聽；請匯入本機音檔");t.url=hit.previewUrl;t.preview=true;t.previewName=hit.trackName||"";t.previewArtist=hit.artistName||"";t.duration=30;t.cover=hit.artworkUrl100?.replace("100x100","500x500");await idbPut(t);return t.url;}finally{cloudResolving=false;}}
-  async function playTrack(id){const t=S.tracks.find(x=>x.id===id);if(!t)return;try{stopSing();settings.currentId=id;settings.lastChatId=chatId();S.current=t;S.lyrics=parseLrc(t.lyricsText);S.lyricIndex=-1;persist();const hasBlob=t.source==="local"||t.source==="elevenmusic";const src=hasBlob?URL.createObjectURL(t.blob):await resolveCloud(t);if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl=null;}if(hasBlob)objectUrl=src;audio.src=src;audio.volume=settings.volume;await audio.play();S.playing=true;S.tab="now";document.dispatchEvent(new CustomEvent("yw-music-play",{detail:{id:t.id,name:t.name,artist:t.artist||"",source:t.source,at:Date.now()}}));render();}catch(e){S.playing=false;render();toast(e.message||"播放失敗",true);}}
+  async function playTrack(id){const t=S.tracks.find(x=>x.id===id);if(!t)return;try{stopSing();settings.currentId=id;settings.lastChatId=chatId();S.current=t;S.lyrics=parseLrc(t.lyricsText);S.lyricIndex=-1;persist();const hasBlob=t.source==="local"||t.source==="elevenmusic";const viaNcm=!hasBlob&&Ncm&&t.ncmId;const src=hasBlob?URL.createObjectURL(t.blob):viaNcm?await resolveNcm(t):await resolveCloud(t);if(settings.currentId!==id)return;N.retried=false;if(viaNcm)ncmLyrics(t);if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl=null;}if(hasBlob)objectUrl=src;audio.src=src;audio.volume=settings.volume;await audio.play();S.playing=true;S.tab="now";document.dispatchEvent(new CustomEvent("yw-music-play",{detail:{id:t.id,name:t.name,artist:t.artist||"",source:t.source,at:Date.now()}}));render();}catch(e){S.playing=false;render();toast(e.message||"播放失敗",true);}}
   async function toggle(){const t=currentTrack();if(!t){if(S.tracks[0])return playTrack(S.tracks[0].id);return open("list");}if(!audio.src)return playTrack(t.id);if(audio.paused){try{await audio.play();}catch(e){return toast(e.message,true);}}else audio.pause();}
   function step(dir){if(!S.tracks.length)return;let i=S.tracks.findIndex(t=>t.id===settings.currentId);i=(i+dir+S.tracks.length)%S.tracks.length;playTrack(S.tracks[i].id);}
-  audio.addEventListener("play",()=>{S.playing=true;render();});audio.addEventListener("pause",()=>{S.playing=false;render();});audio.addEventListener("ended",()=>{if(settings.repeat==="one"){audio.currentTime=0;audio.play();}else step(1);});
-  audio.addEventListener("timeupdate",()=>{const cur=$("#ywmCur"),dur=$("#ywmDur"),seek=$("#ywmSeek");if(cur)cur.textContent=fmt(audio.currentTime);if(dur)dur.textContent=fmt(audio.duration);if(seek&&!seek.matches(":active")){seek.max=audio.duration||30;seek.value=audio.currentTime;}if(S.lyrics.length){let idx=-1;for(let i=0;i<S.lyrics.length;i++){if(S.lyrics[i].time<=audio.currentTime+.12)idx=i;else break;}if(idx!==S.lyricIndex){S.lyricIndex=idx;const box=$("#ywmLyrics");if(box){box.innerHTML=lyricsHtml();const on=$(".ywm-lyric-line.on",box);if(on)box.scrollTop=Math.max(0,on.offsetTop-box.clientHeight/2+17);}}}const miniLyric=$(".ywm-mini-lyric");if(miniLyric&&S.lyrics[idxSafe(S.lyricIndex)])miniLyric.textContent=S.lyrics[S.lyricIndex].text;});
+  audio.addEventListener("play",()=>{S.playing=true;render();ncmSync(true);});audio.addEventListener("pause",()=>{S.playing=false;render();ncmSync(true);});
+  audio.addEventListener("playing",()=>{N.retried=false;});
+  audio.addEventListener("error",async()=>{const t=currentTrack();if(!Ncm||!t?.ncmId||!audio.src||N.retried)return;N.retried=true;const at=audio.currentTime||0;
+    try{const src=await resolveNcm(t);if(settings.currentId!==t.id)return;audio.src=src;audio.addEventListener("loadedmetadata",()=>{audio.currentTime=at;},{once:true});await audio.play();}catch(e){toast(e.message||"播放失敗",true);}});
+  audio.addEventListener("ended",()=>{if(settings.repeat==="one"){audio.currentTime=0;audio.play();}else step(1);});
+  audio.addEventListener("timeupdate",()=>{ncmSync(false);const cur=$("#ywmCur"),dur=$("#ywmDur"),seek=$("#ywmSeek");if(cur)cur.textContent=fmt(audio.currentTime);if(dur)dur.textContent=fmt(audio.duration);if(seek&&!seek.matches(":active")){seek.max=audio.duration||30;seek.value=audio.currentTime;}if(S.lyrics.length){let idx=-1;for(let i=0;i<S.lyrics.length;i++){if(S.lyrics[i].time<=audio.currentTime+.12)idx=i;else break;}if(idx!==S.lyricIndex){S.lyricIndex=idx;ncmSync(true);const box=$("#ywmLyrics");if(box){box.innerHTML=lyricsHtml();const on=$(".ywm-lyric-line.on",box);if(on)box.scrollTop=Math.max(0,on.offsetTop-box.clientHeight/2+17);}}}const miniLyric=$(".ywm-mini-lyric");if(miniLyric&&S.lyrics[idxSafe(S.lyricIndex)])miniLyric.textContent=S.lyrics[S.lyricIndex].text;});
   function idxSafe(i){return i>=0?i:0;}
 
   /* ---------- 匯入 ---------- */
@@ -319,13 +346,14 @@
   function backToChat(){S.open=false;S.mini=false;settings.mini=false;persist();render();const cid=chatId();if(cid&&!location.hash.includes("/chat/"))location.hash=`#/chat/${encodeURIComponent(cid)}`;}
 
   /* ---------- 事件委派 ---------- */
-  function wire(){const root=$("#ywAudioRoot");if(!root)return;root.onclick=e=>{const b=e.target.closest("button,[data-track],[data-mini-open]");if(!b)return;
+  function wire(){const root=$("#ywAudioRoot");if(!root)return;root.onclick=e=>{const b=e.target.closest("button,[data-track],[data-ncm-add],[data-mini-open]");if(!b)return;if(b.type==="submit"&&b.closest("#ywmNcmForm"))return;
     if(b.dataset.tab){syncComposeForm();S.tab=b.dataset.tab;S.importing=false;render();if((S.tab==="voice"||S.tab==="compose")&&!S.voiceCfg)loadVoice();return;}
     if(b.dataset.filter){S.listFilter=b.dataset.filter;S.tab="list";render();return;}
     if(b.hasAttribute("data-close"))return close(true);if(b.hasAttribute("data-back"))return backToChat();if(b.hasAttribute("data-toggle"))return toggle();if(b.hasAttribute("data-prev"))return step(-1);if(b.hasAttribute("data-next"))return step(1);
     if(b.hasAttribute("data-repeat")){settings.repeat=settings.repeat==="one"?"list":"one";persist();render();return;}
     if(b.hasAttribute("data-chat"))return openChat();if(b.hasAttribute("data-chat-close")){S.chatOpen=false;render();return;}if(b.hasAttribute("data-share"))return shareCurrent();
-    if(b.dataset.track)return playTrack(b.dataset.track);if(b.dataset.import==="local")return pickFiles();if(b.dataset.import){S.importSource=b.dataset.import;S.importing=true;render();return;}
+    if(b.dataset.track)return playTrack(b.dataset.track);if(b.dataset.import==="local")return pickFiles();if(b.dataset.import){S.importSource=b.dataset.import;S.importing=true;render();if(Ncm&&S.importSource==="netease")ncmCheck();return;}
+    if(b.dataset.ncmAdd!=null)return ncmAdd(+b.dataset.ncmAdd).catch(err=>toast(err.message||"加入失敗",true));if(b.hasAttribute("data-ncm-more"))return ncmSearch(true);
     if(b.hasAttribute("data-cancel-import")){S.importing=false;render();return;}if(b.hasAttribute("data-parse-import"))return importShare();
     if(b.dataset.favorite)return toggleFavorite(b.dataset.favorite);
     if(b.dataset.lyric)return editLyrics(b.dataset.lyric);if(b.dataset.del){idbDel(b.dataset.del).then(async()=>{if(settings.currentId===b.dataset.del){audio.pause();audio.removeAttribute("src");settings.currentId=null;S.current=null;persist();}await refreshTracks();});return;}
@@ -337,12 +365,13 @@
     if(b.dataset.sing!=null)return startSing(+b.dataset.sing);if(b.hasAttribute("data-stop-sing"))return stopSing();
     if(b.hasAttribute("data-mini-open")){S.open=true;S.mini=false;settings.mini=false;persist();render();return;}if(b.hasAttribute("data-mini-close")){S.mini=false;settings.mini=false;persist();render();return;}
   };
-    root.oninput=e=>{if(e.target.dataset.slider){const out=$(`#yw_${e.target.dataset.slider}_val`);if(out)out.textContent=(+e.target.value).toFixed(2);}if(e.target.id==="ywmSeek"){audio.currentTime=+e.target.value;}
+    root.oninput=e=>{if(e.target.id==="ywmNcmQ"){N.draft=e.target.value;return;}if(e.target.dataset.slider){const out=$(`#yw_${e.target.dataset.slider}_val`);if(out)out.textContent=(+e.target.value).toFixed(2);}if(e.target.id==="ywmSeek"){audio.currentTime=+e.target.value;}
     if(e.target.id==="ywmComposePrompt"||e.target.id==="ywmComposeTitle"){syncComposeForm();const count=$("#ywmPromptCount");if(count)count.textContent=`${[...S.compose.prompt].length}／2000`;const submit=$("[data-compose-music]",root);if(submit)submit.disabled=!S.hasKey||S.composing||[...S.compose.prompt].length<4;}};
     root.onchange=e=>{if(e.target.id==="ywaProvider"){$("#ywaVoiceIdWrap")?.classList.toggle("ywa-hidden",e.target.value==="browser");$("#ywaBrowserVoiceWrap")?.classList.toggle("ywa-hidden",e.target.value!=="browser");}
     if(e.target.id==="ywmComposeDuration"||e.target.id==="ywmComposeInstrumental")syncComposeForm();
     if(e.target.id==="ywaAsrLang"){try{localStorage.setItem("yw_asr_lang",e.target.value);}catch{}toast("語音辨識語言已更新，下一通電話生效");}
     if(e.target.id==="ywaCallMem"){try{localStorage.setItem("yw_call_memory",e.target.checked?"on":"off");}catch{}toast(e.target.checked?"通話摘要會記進 TA 的記憶":"通話摘要不會再寫入記憶");}};
+    const ncmForm=$("#ywmNcmForm",root);if(ncmForm)ncmForm.onsubmit=e=>{e.preventDefault();$("#ywmNcmQ")?.blur();ncmSearch(false);};
     const form=$("#ywaChatForm",root);if(form)form.onsubmit=e=>{e.preventDefault();const inp=$("#ywaChatInput");const text=inp.value;inp.value="";sendChat(text);};
     makeMiniDraggable();
   }

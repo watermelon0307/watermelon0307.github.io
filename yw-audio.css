@@ -191,3 +191,18 @@
   .ywm-generated .ywm-btn{flex:1}
 }
 @media (prefers-reduced-motion:reduce){.ywm-compose *{scroll-behavior:auto!important;transition:none!important}}
+
+/* 網易雲音樂（本機 ncm_web 伺服器）搜尋 */
+.ywm-ncm-search { display:flex; gap:8px; }
+.ywm-ncm-search input { flex:1; min-width:0; border:1px solid #ffffff20; border-radius:8px; background:#111; color:#fff; padding:10px 11px; font-size:14px; outline:none; }
+.ywm-ncm-search input:focus-visible { border-color:#ff8585; }
+.ywm-ncm-search .ywm-btn { flex:0 0 auto; min-height:44px; }
+.ywm-ncm-status a { color:#ff9c9c; }
+.ywm-ncm-status.err { color:#ff9c9c; }
+.ywm-ncm-row img,.ywm-ncm-ph { width:44px; height:44px; flex:0 0 44px; border-radius:8px; object-fit:cover; background:#ffffff12; }
+.ywm-ncm-row.off .ywm-track-name,.ywm-ncm-row.off .ywm-track-meta { color:#777; }
+.ywm-ncm-pill { display:inline-block; margin-left:6px; padding:0 5px; border:1px solid #ffffff33; border-radius:5px; font-size:10px; line-height:15px; color:#bbb; vertical-align:1px; }
+.ywm-ncm-dur { flex:0 0 auto; color:#888; font-size:11px; font-variant-numeric:tabular-nums; }
+.ywm-ncm [data-ncm-more] { width:100%; margin-top:10px; min-height:44px; }
+.ywm-ncm-share { margin-top:12px; border-top:1px solid #ffffff12; padding-top:6px; }
+.ywm-ncm-share summary { min-height:44px; display:flex; align-items:center; color:#aaa; font-size:12px; cursor:pointer; }

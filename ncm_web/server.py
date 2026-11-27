@@ -51,6 +51,18 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 COOKIE_FILE = os.path.join(ROOT, "cookie.txt")
 AV_DIR = os.path.join(ROOT, "av")
 
+# 允許跨來源呼叫的網頁（餘溫 App 本體）。它們只能用 CORS_PATHS 裡的接口：
+# 搜尋、取播放地址、歌詞、目前播放；登入、Cookie、登出、遙控仍只限本頁。
+CORS_ORIGINS = set(
+    o.strip().rstrip("/")
+    for o in os.environ.get(
+        "NCM_ALLOW_ORIGINS",
+        "https://watermelon0307.github.io,https://localhost,capacitor://localhost",
+    ).split(",")
+    if o.strip()
+)
+CORS_PATHS = ("/api/status", "/api/search", "/api/playurl", "/api/lyric", "/api/nowplaying")
+
 STATIC_FILES = {
     "/": "index.html",
     "/index.html": "index.html",
@@ -593,15 +605,26 @@ class Handler(BaseHTTPRequestHandler):
         sys.stdout.write("%s %s\n" % (time.strftime("%H:%M:%S"), fmt % args))
         sys.stdout.flush()
 
-    # 只接受本機來源，擋掉 DNS rebinding 與其他網頁的跨站請求
-    def _local_only(self):
+    # 只接受本機來源，擋掉 DNS rebinding 與其他網頁的跨站請求。
+    # 回傳 "local"（本頁，全部接口）、"cors"（白名單網頁，限 CORS_PATHS）或 None（拒絕）
+    def _access(self):
+        self._cors_origin = None
         allowed = ("127.0.0.1:%d" % PORT, "localhost:%d" % PORT)
         if self.headers.get("Host", "") not in allowed:
-            return False
+            return None
         origin = self.headers.get("Origin")
-        if origin and urllib.parse.urlparse(origin).netloc not in allowed:
-            return False
-        return True
+        if not origin or urllib.parse.urlparse(origin).netloc in allowed:
+            return "local"
+        parsed = urllib.parse.urlparse(origin)
+        other_local = parsed.scheme == "http" and parsed.hostname in ("127.0.0.1", "localhost")
+        if origin.rstrip("/") in CORS_ORIGINS or other_local:
+            self._cors_origin = origin
+            return "cors"
+        return None
+
+    def _allowed(self, path):
+        access = self._access()
+        return access == "local" or (access == "cors" and path in CORS_PATHS)
 
     def _send(self, status, body, ctype):
         self.send_response(status)
@@ -609,6 +632,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
+        if getattr(self, "_cors_origin", None):
+            self.send_header("Access-Control-Allow-Origin", self._cors_origin)
+            self.send_header("Vary", "Origin")
         self.end_headers()
         if self.command != "HEAD":
             self.wfile.write(body)
@@ -651,10 +677,27 @@ class Handler(BaseHTTPRequestHandler):
         ext = os.path.splitext(full)[1].lower()
         self._send(200, body, MIME.get(ext, "application/octet-stream"))
 
-    def do_GET(self):
-        if not self._local_only():
+    def do_OPTIONS(self):  # CORS 預檢（含 Chrome 的私有網路存取預檢）
+        path, _q = self._query()
+        if not self._allowed(path):
+            self._cors_origin = None
             return self._json({"error": "forbidden"}, 403)
+        self.send_response(204)
+        if self._cors_origin:
+            self.send_header("Access-Control-Allow-Origin", self._cors_origin)
+            self.send_header("Vary", "Origin")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Private-Network", "true")
+        self.send_header("Access-Control-Max-Age", "600")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    def do_GET(self):
         path, q = self._query()
+        if not self._allowed(path):
+            self._cors_origin = None
+            return self._json({"error": "forbidden"}, 403)
         if path in GET_ROUTES:
             return self._run(GET_ROUTES[path], q)
         if path.startswith("/api/"):
@@ -666,9 +709,10 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         length = int(self.headers.get("Content-Length") or 0)
         raw = self.rfile.read(min(length, 1 << 20)) if length > 0 else b""
-        if not self._local_only():
-            return self._json({"error": "forbidden"}, 403)
         path, q = self._query()
+        if not self._allowed(path):
+            self._cors_origin = None
+            return self._json({"error": "forbidden"}, 403)
         fn = POST_ROUTES.get(path)
         if not fn:
             return self._json({"error": "not found"}, 404)
