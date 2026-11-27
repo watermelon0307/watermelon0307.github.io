@@ -26,7 +26,24 @@
   const API_BASE = String(
     configured.apiBase ?? document.querySelector('meta[name="yowen-auth-api"]')?.content ?? "",
   ).trim().replace(/\/+$/, "");
-  const remote = Boolean(API_BASE);
+  const supabase = configured.provider === "supabase";
+  const remote = Boolean(API_BASE) || supabase;
+  const authMode = supabase ? "supabase" : API_BASE ? "remote" : "demo";
+  let cloudReady = !supabase;
+  let cloudAccount = null;
+  let supabaseProviderPromise = null;
+  let readyPromise = null;
+  let lastAuthenticatedId = "";
+
+  function cloudProvider() {
+    if (!supabaseProviderPromise) {
+      supabaseProviderPromise = Promise.resolve().then(() => {
+        if (!window.YowenSupabaseAuth?.create) throw new Error("Supabase 登入元件尚未載入");
+        return window.YowenSupabaseAuth.create(configured);
+      });
+    }
+    return supabaseProviderPromise;
+  }
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const esc = (value) => String(value ?? "").replace(
@@ -116,19 +133,34 @@
   }
 
   function session() {
+    // Supabase 驗證完成前，不信任舊版 yowen_session，避免短暫解鎖私人資料。
+    if (supabase) return cloudReady && cloudAccount ? { ...cloudAccount } : null;
     const value = readJson(LS_SESSION, null);
     return value && value.id && value.login ? value : null;
   }
 
   function setSession(account, via) {
-    if (!writeJson(LS_SESSION, {
+    const previous = readJson(LS_SESSION, null);
+    if (supabase && previous?.mode === "demo" && previous.id && previous.id !== account.id) {
+      // 音樂模組據此複製本機示範帳號資料；原帳號與原始收藏均不刪除。
+      writeJson("yowen_demo_music_source_v1", { id: previous.id });
+    }
+    const value = {
       id: account.id,
       login: account.login,
       nick: account.nick ?? account.login,
       via,
-      mode: remote ? "remote" : "demo",
+      mode: authMode,
       at: Date.now(),
-    })) throw new Error("這台裝置無法保存登入狀態，請檢查瀏覽器儲存權限");
+    };
+    if (!writeJson(LS_SESSION, value)) throw new Error("這台裝置無法保存登入狀態，請檢查瀏覽器儲存權限");
+    if (supabase) cloudAccount = { ...value };
+  }
+
+  function clearSession() {
+    cloudAccount = null;
+    lastAuthenticatedId = "";
+    localStorage.removeItem(LS_SESSION);
   }
 
   function localAccount(target, password = "") {
@@ -257,9 +289,12 @@
     if (!card) return;
     const keep = {};
     card.querySelectorAll("[data-f]").forEach((input) => { keep[input.dataset.f] = input.value; });
+    const environment = supabase ? "SUPABASE AUTH" : API_BASE ? "REMOTE AUTH" : "LOCAL DEMO";
     card.innerHTML =
-      `<div class="yid-brand"><div class="yid-logo" id="yidTitle">餘溫</div><div class="yid-sub">YOWEN ID // IDENTITY GATE</div><span class="yid-environment ${remote ? "remote" : "demo"}">${remote ? "REMOTE AUTH" : "LOCAL DEMO"}</span></div>` +
-      (G.oauth ? oauthHtml(G.oauth) : authHtml());
+      `<div class="yid-brand"><div class="yid-logo" id="yidTitle">餘溫</div><div class="yid-sub">YOWEN ID // IDENTITY GATE</div><span class="yid-environment ${remote ? "remote" : "demo"}">${environment}</span></div>` +
+      (!cloudReady
+        ? '<p class="yid-notice remote" role="status">正在安全恢復登入狀態…</p>'
+        : G.oauth ? oauthHtml(G.oauth) : authHtml());
     card.querySelectorAll("[data-f]").forEach((input) => {
       if (keep[input.dataset.f] != null) input.value = keep[input.dataset.f];
     });
@@ -268,19 +303,24 @@
   }
 
   function noticeHtml() {
+    if (supabase) return '<p class="yid-notice remote">由 Supabase 處理郵箱驗證碼與登入；驗證碼只寄到你的信箱，不會顯示在畫面。</p>';
     return remote
       ? '<p class="yid-notice remote">由正式登入服務處理帳號與驗證碼；服務回應成功後才會顯示已發送。</p>'
       : '<p class="yid-notice">本機示範：不會真的發簡訊、郵件或連接 QQ／微信；帳號只保存在這台裝置。</p>';
   }
 
   function authHtml() {
+    const accountInput = (placeholder = "+886 912345678 / name@example.com") =>
+      `<label class="yid-field"><span>${supabase ? "郵箱" : "手機號或郵箱"}</span><input data-f="login" inputmode="email" placeholder="${supabase ? "name@example.com" : placeholder}" autocomplete="username" maxlength="254" /></label>`;
+    const accountHint = supabase
+      ? '<p class="yid-field-hint">目前雲端登入開放郵箱；手機簡訊尚未配置。</p>'
+      : '<p class="yid-field-hint">手機可用國際格式、台灣 09 開頭或中國大陸 11 位號碼。</p>';
     const tabs = [["login", "登入"], ["register", "註冊"]]
       .map(([key, text]) => `<button type="button" data-tab="${key}" aria-pressed="${G.tab === key}" class="${G.tab === key ? "on" : ""}" ${G.busy ? "disabled" : ""}>${text}</button>`).join("");
 
     if (G.tab === "register") {
       return `<div class="yid-tabs">${tabs}</div>${noticeHtml()}` +
-        '<label class="yid-field"><span>手機號或郵箱</span><input data-f="login" inputmode="email" placeholder="+886 912345678 / name@example.com" autocomplete="username" maxlength="254" /></label>' +
-        '<p class="yid-field-hint">手機可用國際格式、台灣 09 開頭或中國大陸 11 位號碼。</p>' +
+        accountInput() + accountHint +
         '<label class="yid-field"><span>密碼（至少 8 位，含字母與數字）</span><input data-f="pass" type="password" placeholder="設定密碼" autocomplete="new-password" maxlength="128" /></label>' +
         '<label class="yid-field"><span>確認密碼</span><input data-f="pass2" type="password" placeholder="再輸入一次" autocomplete="new-password" maxlength="128" /></label>' +
         '<label class="yid-field"><span>驗證碼</span><div class="yid-code-row"><input data-f="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" placeholder="6 位數字" /><button type="button" data-send>發送驗證碼</button></div></label>' +
@@ -294,12 +334,10 @@
       .map(([key, text]) => `<button type="button" data-method="${key}" aria-pressed="${G.method === key}" class="${key === "qq" ? "yid-qq" : key === "wx" ? "yid-wx" : ""} ${G.method === key ? "on" : ""}" ${G.busy ? "disabled" : ""}>${text}</button>`).join("");
     let body = "";
     if (G.method === "password") {
-      body =
-        '<label class="yid-field"><span>手機號或郵箱</span><input data-f="login" inputmode="email" placeholder="+886 912345678 / name@example.com" autocomplete="username" maxlength="254" /></label>' +
+      body = accountInput() +
         '<label class="yid-field"><span>密碼</span><input data-f="pass" type="password" placeholder="密碼" autocomplete="current-password" maxlength="128" /></label>';
     } else if (G.method === "code") {
-      body =
-        '<label class="yid-field"><span>手機號或郵箱</span><input data-f="login" inputmode="email" placeholder="用來接收驗證碼" autocomplete="username" maxlength="254" /></label>' +
+      body = accountInput("用來接收驗證碼") +
         '<label class="yid-field"><span>驗證碼</span><div class="yid-code-row"><input data-f="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" placeholder="6 位數字" /><button type="button" data-send>發送驗證碼</button></div></label>' +
         smsHtml("login");
     }
@@ -337,7 +375,7 @@
       const method = button.dataset.method;
       if (method === "qq" || method === "wx") {
         if (remote) {
-          setMsg(`${method === "qq" ? "QQ" : "微信"}正式授權尚未配置；請先使用手機、郵箱或密碼登入`);
+          setMsg(`${method === "qq" ? "QQ" : "微信"}正式授權尚未配置；請先使用${supabase ? "郵箱或密碼" : "手機、郵箱或密碼"}登入`);
           return;
         }
         G.oauth = method; G.msg = ""; render(); return;
@@ -372,16 +410,32 @@
   function validPassword(password) { return password.length >= 8 && /[A-Za-z]/.test(password) && /\d/.test(password); }
 
   async function onSendCode() {
-    if (G.busy) return;
+    if (G.busy || !cloudReady) return;
+    if (supabase && !emailTarget(val("login"))) return setMsg("目前雲端登入只開放郵箱，請輸入有效郵箱");
     if (!isAccount(val("login"))) return setMsg("請輸入有效的國際手機號或郵箱");
     const target = normalizeTarget(val("login"));
     const purpose = G.tab === "register" ? "register" : "login";
+    if (purpose === "register") {
+      if (!validPassword(val("pass"))) return setMsg("密碼至少 8 位，且要同時包含字母與數字");
+      if (val("pass") !== val("pass2")) return setMsg("兩次輸入的密碼不一致");
+    }
     if (purpose === "register" && !remote && findAccount(target)) return setMsg("這個帳號已註冊，請直接登入");
     if (Date.now() < resendAt) return updateCountdown();
     G.busy = true;
     updateCountdown();
     try {
-      if (remote) {
+      if (supabase) {
+        const provider = await cloudProvider();
+        const data = await provider.requestCode({
+          target, purpose, password: val("pass"),
+          resend: Boolean(pendingCode?.login === target && pendingCode.purpose === purpose),
+        });
+        const ttl = Math.min(Math.max(Number(data.expiresIn) || 300, 30), 600);
+        const wait = Math.min(Math.max(Number(data.resendAfter) || 60, 5), 300);
+        pendingCode = { login: target, requestId: "supabase", code: "", purpose, exp: Date.now() + ttl * 1000, attempts: 0 };
+        resendAt = Date.now() + wait * 1000;
+        setMsg(`驗證碼已發送到 ${maskTarget(target)}`, true);
+      } else if (API_BASE) {
         const data = await post("/code/request", { target, purpose });
         if (!data.requestId) throw new Error("發碼服務缺少 requestId");
         const ttl = Math.min(Math.max(Number(data.expiresIn) || 300, 30), 600);
@@ -403,8 +457,9 @@
   }
 
   async function onSubmit() {
-    if (G.busy) return;
+    if (G.busy || !cloudReady) return;
     const rawLogin = val("login");
+    if (supabase && !emailTarget(rawLogin)) return setMsg("目前雲端登入只開放郵箱，請輸入有效郵箱");
     if (!isAccount(rawLogin)) return setMsg("請輸入有效的手機號或郵箱");
     const target = normalizeTarget(rawLogin);
     const purpose = G.tab === "register" ? "register" : "login";
@@ -422,7 +477,22 @@
     try {
       let account;
       let via;
-      if (remote) {
+      if (supabase) {
+        const provider = await cloudProvider();
+        if (purpose === "register") {
+          if (!pendingCode || pendingCode.login !== target || pendingCode.purpose !== purpose) throw new Error("請先取得這個帳號的驗證碼");
+          account = await provider.register({ target, code: val("code") });
+          via = "email";
+        } else if (G.method === "password") {
+          account = await provider.loginPassword({ target, password: val("pass") });
+          via = "password";
+        } else {
+          if (!pendingCode || pendingCode.login !== target || pendingCode.purpose !== "login") throw new Error("請先取得這個帳號的驗證碼");
+          account = await provider.loginCode({ target, code: val("code") });
+          via = "code";
+        }
+        pendingCode = null;
+      } else if (API_BASE) {
         if (purpose === "register") {
           if (!pendingCode || pendingCode.login !== target || pendingCode.purpose !== purpose) throw new Error("請先取得這個帳號的驗證碼");
           account = remoteAccount(await post("/register", { target, password: val("pass"), code: val("code"), requestId: pendingCode.requestId }));
@@ -491,18 +561,20 @@
 
   function afterAuth(account, via) {
     unmount();
+    if (lastAuthenticatedId === account.id) return;
+    lastAuthenticatedId = account.id;
     document.dispatchEvent(new CustomEvent("yowen:authenticated", {
-      detail: { id: account.id, login: account.login, nick: account.nick, via, mode: remote ? "remote" : "demo" },
+      detail: { id: account.id, login: account.login, nick: account.nick, via, mode: authMode },
     }));
   }
 
-  async function logout() {
-    if (remote) { try { await post("/logout", {}); } catch { /* 本機仍要登出 */ } }
-    const previous = session();
-    localStorage.removeItem(LS_SESSION);
+  function emitLogout(previous) {
     document.dispatchEvent(new CustomEvent("yowen:logout", {
       detail: { id: previous?.id ?? "", login: previous?.login ?? "" },
     }));
+  }
+
+  function resetGate() {
     pendingCode = null;
     resendAt = 0;
     G.tab = "login";
@@ -512,11 +584,71 @@
     if (bootDone()) mount();
   }
 
+  async function logout() {
+    const previous = session();
+    if (supabase) {
+      try { await (await cloudProvider()).logout(); } catch { /* 本機仍要登出 */ }
+    } else if (API_BASE) {
+      try { await post("/logout", {}); } catch { /* 本機仍要登出 */ }
+    }
+    clearSession();
+    emitLogout(previous);
+    resetGate();
+  }
+
+  function onCloudAuthEvent(event, account) {
+    if (event === "INITIAL_SESSION" || (event === "SIGNED_IN" && G.busy)) return;
+    if (event === "SIGNED_OUT") {
+      const previous = session();
+      if (!previous && G.el) return; // 手動登出已完成，忽略隨後送達的重複事件。
+      clearSession();
+      emitLogout(previous);
+      resetGate();
+      return;
+    }
+    if (!account || !["SIGNED_IN", "TOKEN_REFRESHED", "USER_UPDATED"].includes(event)) return;
+    const previous = session();
+    const via = previous?.id === account.id ? previous.via : "code";
+    try {
+      setSession(account, via);
+      afterAuth(account, via);
+    } catch (error) { setMsg(error?.message ?? String(error)); }
+  }
+
+  async function initializeAuth() {
+    if (!supabase) { schedule(); return; }
+    schedule();
+    try {
+      const provider = await cloudProvider();
+      const account = await provider.restore();
+      cloudReady = true;
+      if (account) {
+        const previous = readJson(LS_SESSION, null);
+        const via = previous?.id === account.id ? previous.via : "code";
+        setSession(account, via);
+        afterAuth(account, via);
+      } else {
+        clearSession();
+        schedule();
+        if (G.el) render();
+      }
+      // 恢復完成後才訂閱，避免 INITIAL_SESSION 重複觸發私人資料遷移。
+      provider.subscribe(onCloudAuthEvent).catch(() => {});
+    } catch (error) {
+      cloudReady = true;
+      clearSession();
+      G.msg = `無法恢復 Supabase 登入：${error?.message ?? String(error)}`;
+      schedule();
+      if (G.el) render();
+    }
+  }
+
   window.YowenID = Object.freeze({
     logout,
     session: () => ({ ...session() }),
     normalizeTarget,
-    mode: remote ? "remote" : "demo",
+    ready: () => readyPromise ?? Promise.resolve(),
+    mode: authMode,
   });
 
   let scheduled = false;
@@ -528,5 +660,5 @@
   const observer = new MutationObserver(() => { if (!G.el) schedule(); });
   observer.observe(document.documentElement, { childList: true, subtree: true });
   document.addEventListener("DOMContentLoaded", schedule, { once: true });
-  schedule();
+  readyPromise = initializeAuth();
 })();

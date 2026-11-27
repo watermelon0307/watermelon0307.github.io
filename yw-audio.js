@@ -32,11 +32,30 @@
   async function migrateLegacyTracks(){
     if(trackMigration)return trackMigration;
     const claimedBy=Account.trackMigrationOwner();
-    if(!claimedBy)return;
+    const cloud=Account.cloudTrackMigration();
+    if(!claimedBy&&!cloud)return;
     trackMigration=(async()=>{
       const all=await idbAll();
-      for(const track of all){if(!track.ownerId)await idbPut({...track,ownerId:claimedBy});}
-      Account.finishTrackMigration(claimedBy);
+      const idMap={};
+      for(const original of [...all]){
+        let track=original;
+        if(!track.ownerId&&claimedBy){
+          track=await idbPut({...track,ownerId:claimedBy});
+          const index=all.findIndex(item=>item.id===track.id);if(index>=0)all[index]=track;
+        }
+        if(cloud&&track.ownerId===cloud.sourceOwnerId){
+          const clonedId=Account.cloudTrackId(track.id,cloud.ownerId);
+          idMap[track.id]=clonedId;
+          if(all.some(item=>item.id===clonedId))continue;
+          const clone=await idbPut({...track,id:clonedId,ownerId:cloud.ownerId,migratedFrom:{ownerId:track.ownerId,trackId:track.id}});
+          all.push(clone);
+        }
+      }
+      if(claimedBy)Account.finishTrackMigration(claimedBy);
+      if(cloud){
+        Account.finishCloudTrackMigration(cloud.ownerId,idMap);
+        if(ownerId===cloud.ownerId&&idMap[settings.currentId])settings.currentId=idMap[settings.currentId];
+      }
     })().catch(error=>{trackMigration=null;throw error;});
     return trackMigration;
   }
