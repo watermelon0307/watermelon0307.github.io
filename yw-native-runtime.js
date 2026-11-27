@@ -9,6 +9,10 @@
 
   const app = capacitor.Plugins?.App;
   app?.addListener("backButton", () => {
+    if (window.YWNcm?.isOpen) {
+      window.YWNcm.close();
+      return;
+    }
     if (document.querySelector("#ywcHistory")) {
       window.__ywMusicCompanion?.closeHistory();
       return;

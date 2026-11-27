@@ -52,7 +52,7 @@ COOKIE_FILE = os.path.join(ROOT, "cookie.txt")
 AV_DIR = os.path.join(ROOT, "av")
 
 # 允許跨來源呼叫的網頁（餘溫 App 本體）。它們只能用 CORS_PATHS 裡的接口：
-# 搜尋、取播放地址、歌詞、目前播放；登入、Cookie、登出、遙控仍只限本頁。
+# 也就是只能確認伺服器在不在；其餘接口（含登入、Cookie）一律只限本頁。
 CORS_ORIGINS = set(
     o.strip().rstrip("/")
     for o in os.environ.get(
@@ -61,7 +61,8 @@ CORS_ORIGINS = set(
     ).split(",")
     if o.strip()
 )
-CORS_PATHS = ("/api/status", "/api/search", "/api/playurl", "/api/lyric", "/api/nowplaying")
+FRAME_ANCESTORS = " ".join(sorted(CORS_ORIGINS) + ["http://localhost:*", "http://127.0.0.1:*"])
+CORS_PATHS = ("/api/status",)
 
 STATIC_FILES = {
     "/": "index.html",
@@ -626,12 +627,14 @@ class Handler(BaseHTTPRequestHandler):
         access = self._access()
         return access == "local" or (access == "cors" and path in CORS_PATHS)
 
-    def _send(self, status, body, ctype):
+    def _send(self, status, body, ctype, frameable=False):
         self.send_response(status)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
+        if frameable:  # 只有餘溫 App 可以把這一頁嵌成面板
+            self.send_header("Content-Security-Policy", "frame-ancestors 'self' " + FRAME_ANCESTORS)
         if getattr(self, "_cors_origin", None):
             self.send_header("Access-Control-Allow-Origin", self._cors_origin)
             self.send_header("Vary", "Origin")
@@ -675,7 +678,7 @@ class Handler(BaseHTTPRequestHandler):
         except OSError:
             return self._send(404, b"not found", "text/plain")
         ext = os.path.splitext(full)[1].lower()
-        self._send(200, body, MIME.get(ext, "application/octet-stream"))
+        self._send(200, body, MIME.get(ext, "application/octet-stream"), frameable=ext == ".html")
 
     def do_OPTIONS(self):  # CORS 預檢（含 Chrome 的私有網路存取預檢）
         path, _q = self._query()

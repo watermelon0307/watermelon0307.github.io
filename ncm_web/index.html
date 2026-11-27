@@ -926,7 +926,23 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.75;str
       lyric: line ? line.text : ''
     } : { playing: false };
     api.post('/api/nowplaying', body).catch(function () {});
+    tellParent(body);
   }
+
+  // 被餘溫 App 嵌成面板時：回報目前播放（只含歌名等公開資訊），並接受外層要求暫停
+  var PARENTS = /^(https:\/\/watermelon0307\.github\.io|https:\/\/localhost|capacitor:\/\/localhost|http:\/\/(localhost|127\.0\.0\.1)(:\d+)?)$/;
+  var parentOrigin = '';
+  if (window.parent !== window && location.ancestorOrigins && PARENTS.test(location.ancestorOrigins[0] || '')) {
+    parentOrigin = location.ancestorOrigins[0];
+  }
+  function tellParent(body) {
+    if (!parentOrigin) return;
+    window.parent.postMessage({ source: 'ncm_web', type: 'state', playing: !!body.playing, id: body.id || null, name: body.name || '', artists: body.artists || [] }, parentOrigin);
+  }
+  window.addEventListener('message', function (e) {
+    if (!parentOrigin || e.source !== window.parent || e.origin !== parentOrigin) return;
+    if (e.data && e.data.target === 'ncm_web' && e.data.cmd === 'pause') audio.pause();
+  });
 
   function pollRemote() {
     api.get('/api/remote', { since: state.remoteSeq }).then(function (data) {
