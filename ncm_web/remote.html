@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#100F13">
+<title>WARMTH 遙控器</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:#100F13;color:#F6F2F4}
+body{font-family:Inter,"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;display:flex;justify-content:center}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid #F9D0DA;outline-offset:2px}
+main{width:100%;max-width:420px;padding:calc(env(safe-area-inset-top,0px) + 28px) 24px 32px;display:flex;flex-direction:column;align-items:center;gap:18px}
+.k{font-size:11px;letter-spacing:.24em;color:#BDB5C0}
+img{width:min(64vw,240px);aspect-ratio:1;border-radius:18px;object-fit:cover;background:linear-gradient(160deg,#34313A,#1E1C22);box-shadow:0 24px 50px rgba(0,0,0,.55)}
+h1{margin:0;font-size:24px;text-align:center}
+.s{font-size:14px;color:#BDB5C0;text-align:center;min-height:20px}
+.l{font-size:15px;color:#F9D0DA;text-align:center;min-height:22px}
+.seek{width:100%}
+input[type=range]{width:100%;height:28px;margin:0;accent-color:#F9D0DA}
+.times{display:flex;justify-content:space-between;font-size:12px;color:#BDB5C0;font-variant-numeric:tabular-nums}
+.ctl{display:flex;align-items:center;gap:28px}
+.ctl button{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.ctl .pp{width:72px;height:72px;background:radial-gradient(120% 120% at 30% 18%,#FFF6F8 0%,#F9D0DA 46%,#E9A9BC 100%);color:#301A25;box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 10px 24px rgba(0,0,0,.45)}
+svg{width:30px;height:30px}
+</style>
+</head>
+<body>
+<main>
+  <div class="k">遙控器</div>
+  <img id="cover" alt="">
+  <div>
+    <h1 id="title">尚未播放</h1>
+    <div class="s" id="artist"></div>
+  </div>
+  <div class="l" id="lyric" role="status"></div>
+  <div class="seek">
+    <label for="seek" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">播放進度</label>
+    <input id="seek" type="range" min="0" max="1000" value="0">
+    <div class="times"><span id="cur">00:00</span><span id="dur">00:00</span></div>
+  </div>
+  <div class="ctl">
+    <button data-cmd="prev" aria-label="上一首"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 6.2v11.6c0 .6-.6.9-1.1.6L9 12.6a.7.7 0 0 1 0-1.2l8.9-5.8c.5-.3 1.1 0 1.1.6z"/><rect x="5" y="5.5" width="2.4" height="13" rx="1.2"/></svg></button>
+    <button class="pp" data-cmd="toggle" id="pp" aria-label="播放或暫停"></button>
+    <button data-cmd="next" aria-label="下一首"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 6.2v11.6c0 .6.6.9 1.1.6l8.9-5.8a.7.7 0 0 0 0-1.2L6.1 5.6c-.5-.3-1.1 0-1.1.6z"/><rect x="16.6" y="5.5" width="2.4" height="13" rx="1.2"/></svg></button>
+  </div>
+</main>
+<script>
+/* WARMTH 遙控器：讀 /api/nowplaying，送指令到 /api/remote */
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.5 5.2v13.6c0 .6.6.9 1.1.6l10-6.8a.7.7 0 0 0 0-1.2l-10-6.8c-.5-.3-1.1 0-1.1.6z"/></svg>';
+  var PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6.5" y="5" width="3.8" height="14" rx="1.2"/><rect x="13.7" y="5" width="3.8" height="14" rx="1.2"/></svg>';
+  var dragging = false;
+  var duration = 0;
+  var lastCover = null;
+
+  function fmt(sec) {
+    sec = Math.max(0, Math.floor(sec || 0));
+    var m = Math.floor(sec / 60), s = sec % 60;
+    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function send(cmd, value) {
+    return fetch('/api/remote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cmd: cmd, value: value })
+    }).catch(function () {});
+  }
+
+  function render(now) {
+    duration = now.duration || 0;
+    $('title').textContent = now.name || '尚未播放';
+    $('artist').textContent = (now.artists || []).join(' / ');
+    $('lyric').textContent = now.lyric || '';
+    $('pp').innerHTML = now.playing ? PAUSE : PLAY;
+    var cover = now.cover ? now.cover + '?param=400y400' : '';
+    if (cover !== lastCover) { lastCover = cover; if (cover) $('cover').src = cover; else $('cover').removeAttribute('src'); }
+    if (!dragging) {
+      $('seek').value = duration ? Math.round(((now.position || 0) / duration) * 1000) : 0;
+      $('cur').textContent = fmt(now.position);
+    }
+    $('dur').textContent = fmt(duration);
+  }
+
+  function poll() {
+    fetch('/api/nowplaying').then(function (r) { return r.json(); }).then(render).catch(function () {
+      $('artist').textContent = '連不上本機伺服器';
+    }).then(function () { setTimeout(poll, 1000); });
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-cmd]'), function (btn) {
+    btn.addEventListener('click', function () { send(btn.dataset.cmd); });
+  });
+  $('seek').addEventListener('input', function () {
+    dragging = true;
+    $('cur').textContent = fmt(($('seek').value / 1000) * duration);
+  });
+  $('seek').addEventListener('change', function () {
+    send('seek', ($('seek').value / 1000) * duration).then(function () { dragging = false; });
+  });
+
+  $('pp').innerHTML = PLAY;
+  poll();
+})();
+
+</script>
+</body>
+</html>
