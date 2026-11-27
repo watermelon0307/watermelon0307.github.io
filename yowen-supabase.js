@@ -46,7 +46,7 @@
     if (!login) return null;
     return {
       id: String(user.id), login,
-      nick: clean(user.user_metadata?.nick ?? user.user_metadata?.name) || login.split("@")[0],
+      nick: clean(user.user_metadata?.nick ?? user.user_metadata?.name ?? user.user_metadata?.full_name) || login.split("@")[0],
     };
   }
 
@@ -140,6 +140,15 @@
       return authenticatedAccount(data);
     }
 
+    async function loginGoogle() {
+      const data = unwrap(await (await client()).auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo },
+      }));
+      if (!clean(data.url)) throw new Error("Google 登入沒有回傳授權網址");
+      return { url: clean(data.url) };
+    }
+
     async function restore() {
       const data = unwrap(await (await client()).auth.getSession());
       return accountFrom(data.session?.user);
@@ -157,7 +166,7 @@
 
     async function logout() { unwrap(await (await client()).auth.signOut({ scope: "local" })); }
 
-    return Object.freeze({ requestCode, register, loginPassword, loginCode, restore, subscribe, logout });
+    return Object.freeze({ requestCode, register, loginPassword, loginCode, loginGoogle, restore, subscribe, logout });
   }
 
   window.YowenSupabaseAuth = Object.freeze({ create });

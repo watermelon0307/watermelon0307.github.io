@@ -27,6 +27,7 @@
     configured.apiBase ?? document.querySelector('meta[name="yowen-auth-api"]')?.content ?? "",
   ).trim().replace(/\/+$/, "");
   const supabase = configured.provider === "supabase";
+  const googleOAuth = supabase && configured.googleOAuthEnabled === true;
   const remote = Boolean(API_BASE) || supabase;
   const authMode = supabase ? "supabase" : API_BASE ? "remote" : "demo";
   let cloudReady = !supabase;
@@ -330,8 +331,10 @@
         '<div class="yid-alt">已經有帳號？<button type="button" data-tab="login">直接登入</button></div>';
     }
 
-    const methods = [["password", "密碼"], ["code", "驗證碼"], ["qq", "QQ"], ["wx", "微信"]]
-      .map(([key, text]) => `<button type="button" data-method="${key}" aria-pressed="${G.method === key}" class="${key === "qq" ? "yid-qq" : key === "wx" ? "yid-wx" : ""} ${G.method === key ? "on" : ""}" ${G.busy ? "disabled" : ""}>${text}</button>`).join("");
+    const methods = [
+      ["password", "密碼"], ["code", "驗證碼"], ["qq", "QQ"], ["wx", "微信"],
+      ...(googleOAuth ? [["google", "Google"]] : []),
+    ].map(([key, text]) => `<button type="button" data-method="${key}" aria-pressed="${G.method === key}" class="${key === "qq" ? "yid-qq" : key === "wx" ? "yid-wx" : key === "google" ? "yid-google" : ""} ${G.method === key ? "on" : ""}" ${G.busy ? "disabled" : ""}>${text}</button>`).join("");
     let body = "";
     if (G.method === "password") {
       body = accountInput() +
@@ -373,6 +376,7 @@
     }));
     card.querySelectorAll("[data-method]").forEach((button) => button.addEventListener("click", () => {
       const method = button.dataset.method;
+      if (method === "google") { onGoogle(); return; }
       if (method === "qq" || method === "wx") {
         if (remote) {
           setMsg(`${method === "qq" ? "QQ" : "微信"}正式授權尚未配置；請先使用${supabase ? "郵箱或密碼" : "手機、郵箱或密碼"}登入`);
@@ -533,6 +537,21 @@
       }
       setSession(account, via);
       afterAuth(account, via);
+    } catch (error) {
+      setMsg(error?.message ?? String(error));
+    } finally {
+      G.busy = false;
+      if (G.el) render();
+    }
+  }
+
+  async function onGoogle() {
+    if (G.busy || !cloudReady || !googleOAuth) return;
+    G.busy = true;
+    setMsg("正在前往 Google 授權…", true);
+    render();
+    try {
+      await (await cloudProvider()).loginGoogle();
     } catch (error) {
       setMsg(error?.message ?? String(error));
     } finally {
